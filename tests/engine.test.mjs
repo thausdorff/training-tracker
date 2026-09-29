@@ -327,3 +327,39 @@ test('validateData rejects bad input and fills defaults', () => {
   const ok = validateData({ ...emptyData(), settings: undefined });
   assert.equal(ok.settings.backupReminderDays, 7);
 });
+
+// ---- hold ladder (range + modifier) ----
+function sideplank(extra = {}) {
+  return { id: 'sp', name: 'Side plank', type: 'hold', holdStep: 5, holdRange: [30, 45], ladder: 'modifier', modifierName: 'Top leg raised', ...extra };
+}
+test('hold ladder: first time starts at bottom of range, no start needed', () => {
+  const d = mk(); d.exercises.push(sideplank());
+  const t = targetFor(d, 'sp');
+  assert.equal(t.seconds, 30); assert.ok(!t.needsStart); assert.equal(t.modifier, false);
+});
+test('hold ladder: +5 s below top, weakest set counts', () => {
+  const d = mk({ sessions: [sess(1, [w('sp', [{ seconds: 40 }, { seconds: 35 }])])] }); d.exercises.push(sideplank());
+  assert.equal(targetFor(d, 'sp').seconds, 40);
+});
+test('hold ladder: top without modifier → modifier on, back to bottom', () => {
+  const d = mk({ sessions: [sess(1, [w('sp', [{ seconds: 45 }, { seconds: 46 }])])] }); d.exercises.push(sideplank());
+  const t = targetFor(d, 'sp');
+  assert.equal(t.seconds, 30); assert.equal(t.modifier, true);
+});
+test('hold ladder: climbing with modifier keeps it; top with modifier keeps adding time', () => {
+  const d = mk({ sessions: [sess(1, [w('sp', [{ seconds: 35, modifier: true }])])] }); d.exercises.push(sideplank());
+  assert.deepEqual([targetFor(d, 'sp').seconds, targetFor(d, 'sp').modifier], [40, true]);
+  const d2 = mk({ sessions: [sess(1, [w('sp', [{ seconds: 45, modifier: true }])])] }); d2.exercises.push(sideplank());
+  assert.deepEqual([targetFor(d2, 'sp').seconds, targetFor(d2, 'sp').modifier], [50, true]);
+});
+test('hold ladder: range change restarts at bottom', () => {
+  const d = mk({ sessions: [sess(1, [w('sp', [{ seconds: 40 }])])] });
+  const ex = sideplank(); d.exercises.push(applyExerciseEdit(ex, { ...ex, holdRange: [20, 40] }, '2026-10-05T00:00:00Z'));
+  assert.equal(targetFor(d, 'sp').seconds, 20);
+});
+
+test('cardio: optional starting minutes for the first session', () => {
+  const d = mk(); d.exercises[5].startMinutes = 20;
+  const t = targetFor(d, 'run');
+  assert.equal(t.minutes, 20); assert.ok(!t.needsStart);
+});

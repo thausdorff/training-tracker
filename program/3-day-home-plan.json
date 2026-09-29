@@ -1,0 +1,422 @@
+{
+  "version": 1,
+  "exercises": [
+    {
+      "id": "bss",
+      "name": "Bulgarian split squat",
+      "type": "weighted",
+      "repRange": [
+        8,
+        12
+      ],
+      "ladder": "modifier",
+      "modifierName": "2 s pause at bottom",
+      "weightStep": 2,
+      "perSide": true
+    },
+    {
+      "id": "dpu",
+      "name": "Deficit push-up",
+      "type": "bodyweight",
+      "repRange": [
+        8,
+        12
+      ],
+      "ladder": "modifier",
+      "modifierName": "2 s pause above floor"
+    },
+    {
+      "id": "dbrow",
+      "name": "One-arm dumbbell row",
+      "type": "weighted",
+      "repRange": [
+        8,
+        12
+      ],
+      "ladder": "modifier",
+      "modifierName": "2 s pause at top",
+      "weightStep": 2,
+      "perSide": true
+    },
+    {
+      "id": "slrdl",
+      "name": "Single-leg RDL",
+      "type": "weighted",
+      "repRange": [
+        8,
+        12
+      ],
+      "ladder": "modifier",
+      "modifierName": "2 s pause at deepest point",
+      "weightStep": 2,
+      "perSide": true
+    },
+    {
+      "id": "facepull",
+      "name": "Band face pull",
+      "type": "band",
+      "repRange": [
+        12,
+        16
+      ],
+      "ladder": "modifier",
+      "modifierName": "2 s pause at contraction"
+    },
+    {
+      "id": "pallof",
+      "name": "Pallof press",
+      "type": "band",
+      "repRange": [
+        12,
+        16
+      ],
+      "ladder": "modifier",
+      "modifierName": "2 s hold at press-out",
+      "perSide": true
+    },
+    {
+      "id": "cardio-easy",
+      "name": "Easy cardio",
+      "type": "cardio",
+      "startMinutes": 20,
+      "durationStep": 3,
+      "durationCeiling": 40
+    },
+    {
+      "id": "pullup",
+      "name": "Pull-up",
+      "type": "weighted",
+      "repRange": [
+        8,
+        12
+      ],
+      "ladder": "modifier",
+      "modifierName": "2 s pause at top",
+      "weightStep": 2
+    },
+    {
+      "id": "stepup",
+      "name": "Step-up",
+      "type": "weighted",
+      "repRange": [
+        8,
+        12
+      ],
+      "ladder": "modifier",
+      "modifierName": "2 s pause at bottom",
+      "weightStep": 2,
+      "perSide": true
+    },
+    {
+      "id": "hkpress",
+      "name": "Half-kneeling one-arm press",
+      "type": "weighted",
+      "repRange": [
+        8,
+        12
+      ],
+      "ladder": "modifier",
+      "modifierName": "2 s pause at shoulder",
+      "weightStep": 2,
+      "perSide": true
+    },
+    {
+      "id": "latraise",
+      "name": "Leaning lateral raise",
+      "type": "weighted",
+      "repRange": [
+        12,
+        16
+      ],
+      "ladder": "modifier",
+      "modifierName": "3 s lowering",
+      "weightStep": 2,
+      "perSide": true
+    },
+    {
+      "id": "rdraise",
+      "name": "Chest-supported rear-delt raise",
+      "type": "weighted",
+      "repRange": [
+        12,
+        16
+      ],
+      "ladder": "modifier",
+      "modifierName": "2 s pause at top",
+      "weightStep": 2
+    },
+    {
+      "id": "sideplank",
+      "name": "Side plank",
+      "type": "hold",
+      "holdRange": [
+        30,
+        45
+      ],
+      "ladder": "modifier",
+      "modifierName": "Top leg raised",
+      "holdStep": 5,
+      "holdCeiling": null,
+      "perSide": true
+    },
+    {
+      "id": "cardio-b",
+      "name": "Cardio B",
+      "type": "cardio",
+      "startMinutes": 30,
+      "durationStep": 3,
+      "durationCeiling": 40
+    },
+    {
+      "id": "floorpress",
+      "name": "One-arm dumbbell floor press",
+      "type": "weighted",
+      "repRange": [
+        8,
+        12
+      ],
+      "ladder": "modifier",
+      "modifierName": "2 s pause at bottom",
+      "weightStep": 2,
+      "perSide": true
+    },
+    {
+      "id": "slhip",
+      "name": "Single-leg hip thrust",
+      "type": "weighted",
+      "repRange": [
+        8,
+        12
+      ],
+      "ladder": "modifier",
+      "modifierName": "2 s pause at top",
+      "weightStep": 2,
+      "perSide": true
+    },
+    {
+      "id": "invrow",
+      "name": "Inverted row",
+      "type": "bodyweight",
+      "repRange": [
+        8,
+        12
+      ],
+      "ladder": "modifier",
+      "modifierName": "2 s pause at top"
+    },
+    {
+      "id": "revlunge",
+      "name": "Deficit reverse lunge",
+      "type": "weighted",
+      "repRange": [
+        8,
+        12
+      ],
+      "ladder": "modifier",
+      "modifierName": "2 s pause near bottom",
+      "weightStep": 2,
+      "perSide": true
+    },
+    {
+      "id": "curl",
+      "name": "Curl",
+      "type": "weighted",
+      "repRange": [
+        12,
+        16
+      ],
+      "ladder": "modifier",
+      "modifierName": "3 s lowering",
+      "weightStep": 2
+    },
+    {
+      "id": "ohext",
+      "name": "Overhead triceps extension",
+      "type": "weighted",
+      "repRange": [
+        12,
+        16
+      ],
+      "ladder": "modifier",
+      "modifierName": "3 s lowering",
+      "weightStep": 2
+    },
+    {
+      "id": "ytraise",
+      "name": "Prone Y-T raise",
+      "type": "weighted",
+      "repRange": [
+        12,
+        16
+      ],
+      "ladder": "modifier",
+      "modifierName": "2 s hold at top",
+      "weightStep": 2
+    },
+    {
+      "id": "kneeraise",
+      "name": "Hanging knee raise",
+      "type": "bodyweight",
+      "repRange": [
+        12,
+        16
+      ],
+      "ladder": "modifier",
+      "modifierName": "3 s lowering"
+    }
+  ],
+  "bands": [
+    "Light",
+    "Medium",
+    "Heavy"
+  ],
+  "warmup": [
+    "Brisk walk / marching · 3 min",
+    "Cat-cow ×8",
+    "Open-books ×8 per side",
+    "Wall slides ×10",
+    "Band pull-aparts ×15",
+    "Hip flexor stretch · 30 s per side",
+    "One light set of the first exercise"
+  ],
+  "workouts": [
+    {
+      "id": "A",
+      "name": "A · Legs & chest",
+      "items": [
+        {
+          "exerciseId": "bss",
+          "sets": 3,
+          "supersetWithNext": false
+        },
+        {
+          "exerciseId": "dpu",
+          "sets": 3,
+          "supersetWithNext": false
+        },
+        {
+          "exerciseId": "dbrow",
+          "sets": 3,
+          "supersetWithNext": false
+        },
+        {
+          "exerciseId": "slrdl",
+          "sets": 3,
+          "supersetWithNext": false
+        },
+        {
+          "exerciseId": "facepull",
+          "sets": 3,
+          "supersetWithNext": false
+        },
+        {
+          "exerciseId": "pallof",
+          "sets": 3,
+          "supersetWithNext": false
+        },
+        {
+          "exerciseId": "cardio-easy",
+          "sets": 1,
+          "supersetWithNext": false
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "B · Back & cardio",
+      "items": [
+        {
+          "exerciseId": "pullup",
+          "sets": 3,
+          "supersetWithNext": false
+        },
+        {
+          "exerciseId": "stepup",
+          "sets": 3,
+          "supersetWithNext": false
+        },
+        {
+          "exerciseId": "hkpress",
+          "sets": 3,
+          "supersetWithNext": false
+        },
+        {
+          "exerciseId": "latraise",
+          "sets": 3,
+          "supersetWithNext": true
+        },
+        {
+          "exerciseId": "rdraise",
+          "sets": 3,
+          "supersetWithNext": false
+        },
+        {
+          "exerciseId": "sideplank",
+          "sets": 3,
+          "supersetWithNext": false
+        },
+        {
+          "exerciseId": "cardio-b",
+          "sets": 1,
+          "supersetWithNext": false
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "C · Full body",
+      "items": [
+        {
+          "exerciseId": "floorpress",
+          "sets": 3,
+          "supersetWithNext": false
+        },
+        {
+          "exerciseId": "slhip",
+          "sets": 3,
+          "supersetWithNext": false
+        },
+        {
+          "exerciseId": "invrow",
+          "sets": 3,
+          "supersetWithNext": false
+        },
+        {
+          "exerciseId": "revlunge",
+          "sets": 3,
+          "supersetWithNext": false
+        },
+        {
+          "exerciseId": "curl",
+          "sets": 3,
+          "supersetWithNext": true
+        },
+        {
+          "exerciseId": "ohext",
+          "sets": 3,
+          "supersetWithNext": false
+        },
+        {
+          "exerciseId": "ytraise",
+          "sets": 3,
+          "supersetWithNext": true
+        },
+        {
+          "exerciseId": "kneeraise",
+          "sets": 3,
+          "supersetWithNext": false
+        },
+        {
+          "exerciseId": "cardio-easy",
+          "sets": 1,
+          "supersetWithNext": false
+        }
+      ]
+    }
+  ],
+  "sessions": [],
+  "settings": {
+    "backupReminderDays": 7,
+    "lastExport": null
+  }
+}

@@ -183,23 +183,42 @@ function strengthTarget(ex, data, beforeSession) {
 function holdTarget(ex, data, beforeSession) {
   const step = Number(ex.holdStep ?? EXERCISE_DEFAULTS.holdStep);
   const ceiling = ex.holdCeiling == null || ex.holdCeiling === '' ? null : Number(ex.holdCeiling);
+  const range = Array.isArray(ex.holdRange) && ex.holdRange.length === 2 ? ex.holdRange.map(Number) : null;
+  const modName = ex.modifierName || EXERCISE_DEFAULTS.modifierName;
   const basis = basisSession(data, ex.id, beforeSession);
-  if (!basis) return { seconds: null, needsStart: true, reason: 'First time: set a starting hold time' };
+  if (!basis) {
+    if (range) return { seconds: range[0], modifier: false, reason: `First time: start at ${range[0]} s` };
+    return { seconds: null, modifier: false, needsStart: true, reason: 'First time: set a starting hold time' };
+  }
+  const base = { basisId: basis.session.id };
+  if (range && ex.restartAt && (basis.session.startedAt || basis.session.date) < ex.restartAt) {
+    return { ...base, seconds: range[0], modifier: false, reason: `Program changed: restart at ${range[0]} s` };
+  }
   const weakest = Math.min(...basis.sets.map((s) => Number(s.seconds) || 0));
+  const modifier = basis.sets.every((s) => !!s.modifier);
+  if (range && weakest >= range[1] && ex.ladder === 'modifier' && !modifier) {
+    return { ...base, seconds: range[0], modifier: true, reason: `Top of range: ${modName} on, back to ${range[0]} s` };
+  }
   let seconds = weakest + step;
+  const done = range && weakest >= range[1];
   if (ceiling != null && seconds >= ceiling) {
     seconds = ceiling;
     const reason = weakest >= ceiling ? `At ${ceiling} s ceiling: hold ${ceiling} s` : `+${step} s, capped at ${ceiling} s`;
-    return { seconds, basisId: basis.session.id, reason };
+    return { ...base, seconds, modifier, reason };
   }
-  return { seconds, basisId: basis.session.id, reason: `+${step} s: weakest hold was ${weakest} s` };
+  const reason = done ? `Ladder complete: keep adding time (+${step} s, weakest was ${weakest} s)` : `+${step} s: weakest hold was ${weakest} s`;
+  return { ...base, seconds, modifier, reason };
 }
 
 function cardioTarget(ex, data, beforeSession) {
   const step = Number(ex.durationStep ?? EXERCISE_DEFAULTS.durationStep);
   const ceiling = ex.durationCeiling == null || ex.durationCeiling === '' ? null : Number(ex.durationCeiling);
   const basis = basisSession(data, ex.id, beforeSession);
-  if (!basis) return { minutes: null, km: null, needsStart: true, reason: 'First time: log your time and distance' };
+  if (!basis) {
+    const start = ex.startMinutes == null || ex.startMinutes === '' ? null : Number(ex.startMinutes);
+    if (start != null) return { minutes: start, km: null, reason: `First time: start at ${fmtNum(start)} min` };
+    return { minutes: null, km: null, needsStart: true, reason: 'First time: log your time and distance' };
+  }
   const minutes = round2(basis.sets.reduce((a, s) => a + (Number(s.minutes) || 0), 0));
   const km = round2(basis.sets.reduce((a, s) => a + (Number(s.km) || 0), 0));
   const base = { basisId: basis.session.id, lastMinutes: minutes, lastKm: km };
@@ -230,7 +249,7 @@ export function targetFor(data, exerciseId, beforeSession = null) {
 export function setFromTarget(ex, t) {
   if (!t) return {};
   if (ex.type === 'cardio') return { minutes: t.minutes, km: t.beatDistance ? t.km : null };
-  if (ex.type === 'hold') return { seconds: t.seconds };
+  if (ex.type === 'hold') return { seconds: t.seconds, modifier: !!t.modifier };
   const s = { reps: t.reps, modifier: !!t.modifier };
   if (ex.type === 'weighted') s.weight = t.weight;
   if (ex.type === 'band') s.band = t.band;
@@ -247,7 +266,7 @@ export function formatSet(ex, s) {
     if (s.km != null) parts.push(`${fmtNum(s.km)} km`);
     return parts.join(' · ');
   }
-  if (ex.type === 'hold') return s.seconds == null ? '' : `${fmtNum(s.seconds)} s`;
+  if (ex.type === 'hold') return s.seconds == null ? '' : `${fmtNum(s.seconds)} s${s.modifier ? ` ${ex.modifierName || 'Pause'}` : ''}`;
   const mod = s.modifier ? ` ${ex.modifierName || 'Pause'}` : '';
   if (ex.type === 'weighted') return `${s.weight == null ? '?' : fmtNum(s.weight)}×${s.reps ?? '?'}${mod}`;
   if (ex.type === 'band') return `${s.band || '?'}×${s.reps ?? '?'}${mod}`;
@@ -278,7 +297,7 @@ export function formatTarget(ex, t, sets = 1) {
     if (t.minutes == null) return 'Time + distance';
     return t.beatDistance ? `${fmtNum(t.minutes)} min · > ${fmtNum(t.km)} km` : `${fmtNum(t.minutes)} min`;
   }
-  if (ex.type === 'hold') return t.seconds == null ? `${sets} × ? s` : `${sets} × ${t.seconds} s`;
+  if (ex.type === 'hold') return `${sets} × ${t.seconds == null ? '?' : t.seconds} s${t.modifier ? ` · ${ex.modifierName || 'Pause'}` : ''}`;
   const mod = t.modifier ? ` · ${ex.modifierName || 'Pause'}` : '';
   const load = describeLoad(ex, t);
   return `${sets} × ${t.reps}${load ? ` @ ${load}` : ''}${mod}`;
@@ -334,8 +353,9 @@ export function chartSeries(data, exerciseId) {
 /** Apply an exercise edit; changing rep range or ladder restarts progression. */
 export function applyExerciseEdit(oldEx, newEx, nowIso) {
   const out = { ...newEx };
-  if (oldEx && (oldEx.type !== 'cardio' && oldEx.type !== 'hold')) {
-    const rangeChanged = JSON.stringify(oldEx.repRange) !== JSON.stringify(newEx.repRange);
+  if (oldEx && oldEx.type !== 'cardio') {
+    const key = oldEx.type === 'hold' ? 'holdRange' : 'repRange';
+    const rangeChanged = JSON.stringify(oldEx[key] ?? null) !== JSON.stringify(newEx[key] ?? null);
     const ladderChanged = oldEx.ladder !== newEx.ladder;
     if (rangeChanged || ladderChanged) out.restartAt = nowIso;
   }

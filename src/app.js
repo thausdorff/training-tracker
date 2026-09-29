@@ -2,7 +2,7 @@ import { html, render, useState, useEffect, useRef } from '../vendor/preact-htm.
 import * as E from './engine.js';
 import * as St from './store.js';
 
-export const APP_VERSION = '1.0.0';
+export const APP_VERSION = '1.1.0';
 
 // ---------- small helpers ----------
 const nowIso = () => new Date().toISOString();
@@ -61,7 +61,7 @@ function canLog(ex, v) {
 
 function cleanSet(ex, v) {
   if (ex.type === 'cardio') { const o = { minutes: num(v.minutes) }; if (num(v.km) != null) o.km = num(v.km); return o; }
-  if (ex.type === 'hold') return { seconds: num(v.seconds) };
+  if (ex.type === 'hold') { const o = { seconds: num(v.seconds) }; if (v.modifier) o.modifier = true; return o; }
   const o = { reps: num(v.reps), modifier: !!v.modifier };
   if (ex.type === 'weighted') o.weight = num(v.weight);
   if (ex.type === 'band') o.band = v.band;
@@ -304,7 +304,7 @@ function EntryGroup({ data, session, idxs, open, setOpen, mut }) {
             if (confirm(`Remove ${ex.name} from this session?`)) mut((s) => { s.entries.splice(idxs[k], 1); });
           }}>Remove</button>`}
         </div>
-        <div class="target">${E.formatTarget(ex, t, e.plannedSets || counts[k] || 1)}</div>
+        <div class="target">${E.formatTarget(ex, t, e.plannedSets || counts[k] || 1)}${ex.perSide ? html`<span class="muted small"> per side</span>` : ''}</div>
         ${t && t.reason && html`<div class="reason">${t.reason}</div>`}
         ${basis && html`<div class="last">Last (${fmtDate(basis.session.date)}): ${E.summarizeSets(ex, basis.sets)}</div>`}
       </div>`;
@@ -378,12 +378,13 @@ function SetEditor({ ex, data, initial, logged, onSubmit, onDelete, onCancel }) 
   const parsed = { ...v, weight: num(v.weight), reps: num(v.reps), seconds: num(v.seconds), minutes: num(v.minutes), km: num(v.km) };
   const strength = ['weighted', 'band', 'bodyweight'].includes(ex.type);
   return html`<div class="editor">
+    ${ex.perSide && html`<p class="small muted" style="margin:0 0 8px">Per side: log the weaker side.</p>`}
     ${ex.type === 'weighted' && html`<${Stepper} label="kg" value=${v.weight} step=${Number(ex.weightStep || 2)} decimals onChange=${set('weight')} />`}
     ${ex.type === 'band' && (data.bands.length
       ? html`<div class="band-pick">${data.bands.map((b) => html`<button class=${`chip ${v.band === b ? 'on' : ''}`} onClick=${() => set('band')(b)}>${b}</button>`)}</div>`
       : html`<p class="small muted">Add bands in Program → Bands first.</p>`)}
     ${strength && html`<${Stepper} label="Reps" value=${v.reps} step=${1} onChange=${set('reps')} />`}
-    ${strength && (ex.ladder === 'modifier' || v.modifier) && html`<div class="row" style="margin-bottom:10px"><span class="lbl small muted" style="width:64px">${ex.modifierName || 'Pause'}</span>
+    ${(strength || ex.type === 'hold') && (ex.ladder === 'modifier' || v.modifier) && html`<div class="row" style="margin-bottom:10px"><span class="lbl small muted" style="width:64px">${ex.modifierName || 'Pause'}</span>
       <div class="seg" style="flex:1"><button class=${!v.modifier ? 'on' : ''} onClick=${() => set('modifier')(false)}>Off</button>
       <button class=${v.modifier ? 'on' : ''} onClick=${() => set('modifier')(true)}>On</button></div></div>`}
     ${ex.type === 'hold' && html`<${Stepper} label="Seconds" value=${v.seconds} step=${Number(ex.holdStep || 5)} onChange=${set('seconds')} />`}
@@ -592,10 +593,14 @@ function ProgramScreen({ data, update, nav }) {
 function exerciseSummary(ex) {
   const t = E.TYPE_LABELS[ex.type];
   if (ex.type === 'cardio') return `${t} · +${ex.durationStep ?? 3} min${ex.durationCeiling ? ` to ${ex.durationCeiling}` : ''}`;
-  if (ex.type === 'hold') return `${t} · +${ex.holdStep ?? 5} s${ex.holdCeiling ? ` to ${ex.holdCeiling}` : ''}`;
+  const side = ex.perSide ? ' · per side' : '';
+  if (ex.type === 'hold') {
+    const r = ex.holdRange ? ` · ${ex.holdRange[0]}–${ex.holdRange[1]} s${ex.ladder === 'modifier' ? ` → ${ex.modifierName || 'Pause'}` : ''}` : '';
+    return `${t}${r} · +${ex.holdStep ?? 5} s${ex.holdCeiling ? ` to ${ex.holdCeiling}` : ''}${side}`;
+  }
   const lad = ex.ladder === 'modifier' ? `reps → ${ex.modifierName || 'Pause'} → load` : 'reps → load';
   const step = ex.type === 'weighted' ? ` · +${ex.weightStep ?? 2} kg` : '';
-  return `${t} · ${ex.repRange[0]}–${ex.repRange[1]} · ${lad}${step}`;
+  return `${t} · ${ex.repRange[0]}–${ex.repRange[1]} · ${lad}${step}${side}`;
 }
 
 function WorkoutEditor({ data, update, nav, id }) {
@@ -662,7 +667,7 @@ function ExerciseEditor({ data, update, nav, id }) {
     if (data.exercises.some((e) => e.id !== f.id && e.name.toLowerCase() === name.toLowerCase())) return setErr('Another exercise already has this name.');
     const clean = { ...f, name };
     for (const k of ['weightStep', 'holdStep', 'durationStep']) if (clean[k] !== undefined) clean[k] = num(clean[k]) ?? E.EXERCISE_DEFAULTS[k];
-    for (const k of ['holdCeiling', 'durationCeiling']) clean[k] = num(clean[k]);
+    for (const k of ['holdCeiling', 'durationCeiling', 'startMinutes']) clean[k] = num(clean[k]);
     const next = E.applyExerciseEdit(orig, clean, nowIso());
     if (orig && next.restartAt && next.restartAt !== orig.restartAt && hasHistory
       && !confirm('Changing the rep range or ladder restarts this exercise at the bottom of the new range (at your current weight). Continue?')) return;
@@ -706,11 +711,28 @@ function ExerciseEditor({ data, update, nav, id }) {
         ${f.type === 'bodyweight' && html`<p class="small muted">No load step: after the ladder, reps keep climbing.</p>`}
       `}
       ${f.type === 'hold' && html`
+        <div class="field"><span>Range in seconds (optional)</span><div class="row">
+          <input type="number" inputmode="numeric" placeholder="from" value=${f.holdRange ? f.holdRange[0] : ''}
+            onInput=${(e) => set('holdRange', e.target.value === '' ? null : [num(e.target.value), f.holdRange ? f.holdRange[1] : num(e.target.value)])} />
+          <span>–</span>
+          <input type="number" inputmode="numeric" placeholder="to" value=${f.holdRange ? f.holdRange[1] : ''}
+            onInput=${(e) => set('holdRange', e.target.value === '' ? null : [f.holdRange ? f.holdRange[0] : num(e.target.value), num(e.target.value)])} />
+        </div></div>
+        ${f.holdRange && html`<div class="field"><span>At top of range</span><div class="seg">
+          <button class=${f.ladder !== 'modifier' ? 'on' : ''} onClick=${() => set('ladder', 'simple')}>Keep adding time</button>
+          <button class=${f.ladder === 'modifier' ? 'on' : ''} onClick=${() => set('ladder', 'modifier')}>Modifier, then time</button>
+        </div></div>`}
+        ${f.holdRange && f.ladder === 'modifier' && html`<label class="field"><span>Modifier name</span>
+          <input type="text" value=${f.modifierName} onInput=${(e) => set('modifierName', e.target.value)} /></label>`}
         <label class="field"><span>Step (seconds)</span><input type="number" inputmode="numeric" value=${f.holdStep} onInput=${(e) => set('holdStep', e.target.value)} /></label>
         <label class="field"><span>Ceiling (seconds, optional)</span><input type="number" inputmode="numeric" value=${f.holdCeiling ?? ''} onInput=${(e) => set('holdCeiling', e.target.value)} /></label>`}
       ${f.type === 'cardio' && html`
+        <label class="field"><span>Starting minutes (optional, first session)</span><input type="number" inputmode="decimal" value=${f.startMinutes ?? ''} onInput=${(e) => set('startMinutes', e.target.value)} /></label>
         <label class="field"><span>Step (minutes)</span><input type="number" inputmode="decimal" step="any" value=${f.durationStep} onInput=${(e) => set('durationStep', e.target.value)} /></label>
         <label class="field"><span>Ceiling (minutes, optional) — after it, beat the distance</span><input type="number" inputmode="decimal" value=${f.durationCeiling ?? ''} onInput=${(e) => set('durationCeiling', e.target.value)} /></label>`}
+      ${f.type !== 'cardio' && html`<label class="row" style="margin-bottom:12px;min-height:44px">
+        <input type="checkbox" style="width:22px;height:22px" checked=${!!f.perSide} onChange=${(e) => set('perSide', e.target.checked)} />
+        <span>Per side (log the weaker side)</span></label>`}
       ${err && html`<p style="color:var(--danger)">${err}</p>`}
       <button class="btn primary block" onClick=${saveEx}>Save</button>
     </div>

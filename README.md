@@ -41,8 +41,13 @@ Suggestions are always recomputed from the logged history. None of this is store
   - *Reps → modifier → load*: first the modifier (e.g. Pause) goes on and reps reset to
     the bottom; after that, +load, reps reset to the bottom, and the modifier comes off.
   - Bodyweight exercises, and the heaviest band: reps keep climbing past the top.
-- **Timed holds:** the weakest hold + 5 s, up to an optional ceiling.
-- **Cardio:** last time + 3 min, up to a ceiling (default 40 min). At the ceiling, the
+- **Timed holds:** the weakest hold + 5 s, up to an optional ceiling. With an optional range
+  (e.g. 30–45 s) and a modifier, holds use the same ladder as reps: climb the range, add the
+  modifier, climb again, then keep adding time.
+- **Per side:** for unilateral exercises, log the weaker side. Progression then waits until
+  both sides are ready.
+- **Cardio:** last time + 3 min (or an optional starting time for the first session), up to a
+  ceiling (default 40 min). At the ceiling, the
   target is to beat the last distance in the same time.
 - **Deload:** a session marked as a deload is ignored by progression, but still moves
   the rotation forward.
@@ -59,7 +64,8 @@ Suggestions are always recomputed from the logged history. None of this is store
   "version": 1,
   "exercises": [{ "id", "name", "type": "weighted|band|bodyweight|hold|cardio",
                   "repRange": [8,12], "ladder": "simple|modifier", "modifierName",
-                  "weightStep", "holdStep", "holdCeiling", "durationStep", "durationCeiling",
+                  "weightStep", "holdStep", "holdCeiling", "holdRange"?, "durationStep",
+                  "durationCeiling", "startMinutes"?, "perSide"?,
                   "restartAt"? }],
   "bands": ["Yellow", "Red", "Black"],            // light → heavy
   "warmup": ["Arm circles", "..."],
@@ -72,6 +78,12 @@ Suggestions are always recomputed from the logged history. None of this is store
   "settings": { "backupReminderDays": 7, "lastExport": null }
 }
 ```
+
+## Your program
+
+`program/3-day-home-plan.json` is the 3-day home plan, ready for **Data → Import JSON**.
+To change it, edit `program/build-program.mjs` and run `node program/build-program.mjs`.
+Or edit the plan inside the app.
 
 ## Development
 
