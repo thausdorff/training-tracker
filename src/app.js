@@ -2,7 +2,7 @@ import { html, render, useState, useEffect, useRef } from '../vendor/preact-htm.
 import * as E from './engine.js';
 import * as St from './store.js';
 
-export const APP_VERSION = '1.3.0';
+export const APP_VERSION = '1.3.1';
 
 // ---------- small helpers ----------
 const nowIso = () => new Date().toISOString();
@@ -82,7 +82,7 @@ function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   const dark = theme === 'dark' || (theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
   const meta = document.querySelector('meta[name=theme-color]');
-  if (meta) meta.content = dark ? '#121412' : '#f6f5f1';
+  if (meta) meta.content = dark ? '#111116' : '#f6f6f9';
 }
 
 // ---------- app shell ----------
