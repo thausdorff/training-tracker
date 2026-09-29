@@ -363,3 +363,27 @@ test('cardio: optional starting minutes for the first session', () => {
   const t = targetFor(d, 'run');
   assert.equal(t.minutes, 20); assert.ok(!t.needsStart);
 });
+
+import { ladderInfo } from '../src/engine.js';
+test('ladderInfo: modifier ladder positions', () => {
+  const d = mk(); const row = d.exercises[1];
+  const a = ladderInfo(row, { reps: 10, weight: 20, modifier: false }, d);
+  assert.equal(a.text, '10/12 → Pause → +2 kg');
+  assert.deepEqual(a.stages.map((s) => s.fill), [0.5, 0, 0]);
+  const b = ladderInfo(row, { reps: 9, weight: 20, modifier: true }, d);
+  assert.equal(b.text, '9/12 → +2 kg');
+  assert.deepEqual(b.stages.map((s) => s.fill), [1, 0.25, 0]);
+});
+test('ladderInfo: bodyweight top and bands', () => {
+  const d = mk();
+  const push = d.exercises[3];
+  assert.match(ladderInfo(push, { reps: 17, modifier: true }, d).text, /Top of ladder/);
+  const band = d.exercises[2];
+  assert.equal(ladderInfo(band, { reps: 14, band: 'Yellow' }, d).text, '14/16 → Red band');
+  assert.match(ladderInfo(band, { reps: 14, band: 'Black' }, d).text, /keep adding reps/);
+});
+test('ladderInfo: cardio and plain holds', () => {
+  const d = mk();
+  assert.equal(ladderInfo(d.exercises[5], { minutes: 27 }, d).text, '27/40 min → then distance');
+  assert.equal(ladderInfo(d.exercises[4], { seconds: 40 }, d), null);
+});

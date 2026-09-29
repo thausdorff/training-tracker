@@ -395,3 +395,54 @@ export function validateData(d) {
   }
   return { ...emptyData(), ...d, settings: { ...emptyData().settings, ...(d.settings || {}) } };
 }
+
+// ---------- ladder position (for display) ----------
+
+/**
+ * Where a target sits on the exercise's ladder.
+ * Returns { stages: [{ label, fill }], text } or null when the exercise has no ladder.
+ */
+export function ladderInfo(ex, t, data = {}) {
+  if (!ex || !t) return null;
+  const clamp = (x) => Math.max(0, Math.min(1, x));
+  const modName = ex.modifierName || EXERCISE_DEFAULTS.modifierName;
+
+  if (ex.type === 'cardio') {
+    const ceiling = ex.durationCeiling == null || ex.durationCeiling === '' ? null : Number(ex.durationCeiling);
+    if (ceiling == null || t.minutes == null) return null;
+    if (t.beatDistance) return { stages: [{ label: 'Time', fill: 1 }, { label: 'Distance', fill: 1 }], text: `At ${ceiling} min · now beat the distance` };
+    return { stages: [{ label: 'Time', fill: clamp(t.minutes / ceiling) }, { label: 'Distance', fill: 0 }], text: `${fmtNum(t.minutes)}/${ceiling} min → then distance` };
+  }
+
+  let lo; let hi; let value; let unit = '';
+  if (ex.type === 'hold') {
+    if (!Array.isArray(ex.holdRange) || t.seconds == null) return null;
+    [lo, hi] = ex.holdRange.map(Number); value = t.seconds; unit = ' s';
+  } else {
+    [lo, hi] = ex.repRange || EXERCISE_DEFAULTS.repRange; value = t.reps;
+  }
+  if (value == null) return null;
+
+  const hasMod = ex.ladder === 'modifier';
+  let last;
+  if (ex.type === 'weighted') last = `+${fmtNum(Number(ex.weightStep ?? EXERCISE_DEFAULTS.weightStep))} kg`;
+  else if (ex.type === 'band') {
+    const bands = data.bands || [];
+    const i = bands.indexOf(t.band);
+    last = i >= 0 && i < bands.length - 1 ? `${bands[i + 1]} band` : null;
+  } else last = null; // bodyweight / holds: no load step
+  const labels = [ex.type === 'hold' ? 'Time' : 'Reps'];
+  if (hasMod) labels.push(modName);
+  if (last) labels.push(last);
+  const cur = hasMod && t.modifier ? 1 : 0;
+
+  if (value > hi && !last) {
+    return { stages: labels.map((label) => ({ label, fill: 1 })), text: `Top of ladder · keep adding ${ex.type === 'hold' ? 'time' : 'reps'}` };
+  }
+  const frac = clamp((value - lo) / (hi - lo));
+  const stages = labels.map((label, i) => ({ label, fill: i < cur ? 1 : i === cur ? frac : 0 }));
+  const rest = labels.slice(cur + 1);
+  const head = `${value}/${hi}${unit}`;
+  const tail = rest.length ? ` → ${rest.join(' → ')}` : ` → keep adding ${ex.type === 'hold' ? 'time' : 'reps'}`;
+  return { stages, text: head + tail };
+}

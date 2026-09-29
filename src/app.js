@@ -2,7 +2,7 @@ import { html, render, useState, useEffect, useRef } from '../vendor/preact-htm.
 import * as E from './engine.js';
 import * as St from './store.js';
 
-export const APP_VERSION = '1.2.0';
+export const APP_VERSION = '1.3.0';
 
 // ---------- small helpers ----------
 const nowIso = () => new Date().toISOString();
@@ -223,6 +223,7 @@ function SessionScreen({ data, update, nav, id }) {
 function SessionView({ data, update, nav, session, mode, back }) {
   const [open, setOpen] = useState(null); // "entryIdx:rowIdx"
   const [adding, setAdding] = useState(false);
+  const [expanded, setExpanded] = useState({});
   const [warmOpen, setWarmOpen] = useState(mode === 'active' && (session.warmupDone || []).length < data.warmup.length);
   const sid = session.id;
   const mut = (fn) => update((d) => { const s = d.sessions.find((x) => x.id === sid); if (s) fn(s, d); });
@@ -280,6 +281,7 @@ function SessionView({ data, update, nav, session, mode, back }) {
     ${session.deload && html`<p class="small muted" style="margin:-4px 4px 12px">Deload: this session won't affect progression.</p>`}
     ${warm}
     ${groups.map((g, gi) => html`<${EntryGroup} key=${g.join('-')} data=${data} session=${session} idxs=${g} current=${gi === firstOpen}
+        collapsible=${mode === 'active' && !expanded[g.join('-')]} onExpand=${() => setExpanded({ ...expanded, [g.join('-')]: true })}
         open=${open} setOpen=${setOpen} mut=${mut} />`)}
     ${session.entries.length === 0 && html`<div class="empty">No exercises yet — add one below.</div>`}
     <button class="btn block" style="margin-bottom:12px" onClick=${() => setAdding(true)}>+ Add exercise</button>
@@ -297,7 +299,7 @@ function SessionView({ data, update, nav, session, mode, back }) {
   `;
 }
 
-function EntryGroup({ data, session, idxs, current, open, setOpen, mut }) {
+function EntryGroup({ data, session, idxs, current, collapsible, onExpand, open, setOpen, mut }) {
   const isSuper = idxs.length > 1;
   const entries = idxs.map((i) => session.entries[i]);
   const exs = entries.map((e) => exById(data, e.exerciseId));
@@ -315,6 +317,14 @@ function EntryGroup({ data, session, idxs, current, open, setOpen, mut }) {
 
   const groupDone = rows.length > 0 && entries.every((e, k) => e.sets.length >= counts[k]);
   const nextRow = rows.findIndex(([k, r]) => r >= entries[k].sets.length);
+  const editingHere = open != null && idxs.includes(Number(open.split(':')[0]));
+  if (groupDone && collapsible && !editingHere) {
+    return html`<button class="card done-row" onClick=${onExpand} aria-label="Show sets">
+      ${entries.map((e, k) => exs[k] && html`<div class="done-line">
+        <span class="ex-done">✓</span><span class="done-name">${exs[k].name}</span>
+        <span class="done-sum">${E.summarizeSets(exs[k], e.sets)}</span></div>`)}
+    </button>`;
+  }
   return html`<div class=${`card ${groupDone ? 'done' : ''}`}>
     ${isSuper && html`<div class="superset-label">Superset</div>`}
     ${entries.map((e, k) => {
@@ -330,6 +340,7 @@ function EntryGroup({ data, session, idxs, current, open, setOpen, mut }) {
           }}>Remove</button>`}
         </div>
         <div class="target">${E.formatTarget(ex, t, e.plannedSets || counts[k] || 1)}${ex.perSide ? html`<span class="muted small"> per side</span>` : ''}</div>
+        <${Ladder} info=${E.ladderInfo(ex, t, data)} />
         ${t && t.reason && html`<div class="reason">${t.reason}</div>`}
         ${basis && html`<div class="last">Last (${fmtDate(basis.session.date)}): ${E.summarizeSets(ex, basis.sets)}</div>`}
       </div>`;
@@ -359,6 +370,14 @@ function EntryGroup({ data, session, idxs, current, open, setOpen, mut }) {
         const en = s.entries[idxs[k]]; en.plannedSets = Math.max(en.plannedSets || 0, en.sets.length) + 1;
       })}>+ Set${isSuper ? ` ${LETTERS[k]}` : ''}</button>`)}
     </div>
+  </div>`;
+}
+
+function Ladder({ info }) {
+  if (!info) return null;
+  return html`<div class="ladder" title=${info.stages.map((x) => x.label).join(' → ')}>
+    <div class="ladder-bar">${info.stages.map((st) => html`<span><i style=${`width:${Math.round(st.fill * 100)}%`}></i></span>`)}</div>
+    <span class="ladder-text">${info.text}</span>
   </div>`;
 }
 
