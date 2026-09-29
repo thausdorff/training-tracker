@@ -3,7 +3,7 @@
   "exercises": [
     {
       "id": "bss",
-      "name": "Bulgarian split squat",
+      "name": "Bulgarian Split Squat",
       "type": "weighted",
       "repRange": [
         8,
@@ -16,7 +16,7 @@
     },
     {
       "id": "dpu",
-      "name": "Deficit push-up",
+      "name": "Deficit Push-Up",
       "type": "bodyweight",
       "repRange": [
         8,
@@ -27,7 +27,7 @@
     },
     {
       "id": "dbrow",
-      "name": "One-arm dumbbell row",
+      "name": "One-Arm Dumbbell Row",
       "type": "weighted",
       "repRange": [
         8,
@@ -40,7 +40,7 @@
     },
     {
       "id": "slrdl",
-      "name": "Single-leg RDL",
+      "name": "Single-Leg RDL",
       "type": "weighted",
       "repRange": [
         8,
@@ -53,7 +53,7 @@
     },
     {
       "id": "facepull",
-      "name": "Band face pull",
+      "name": "Band Face Pull",
       "type": "band",
       "repRange": [
         12,
@@ -64,7 +64,7 @@
     },
     {
       "id": "pallof",
-      "name": "Pallof press",
+      "name": "Pallof Press",
       "type": "band",
       "repRange": [
         12,
@@ -76,7 +76,7 @@
     },
     {
       "id": "cardio-easy",
-      "name": "Easy cardio",
+      "name": "Easy Cardio",
       "type": "cardio",
       "startMinutes": 20,
       "durationStep": 3,
@@ -84,7 +84,7 @@
     },
     {
       "id": "pullup",
-      "name": "Pull-up",
+      "name": "Pull-Up",
       "type": "weighted",
       "repRange": [
         8,
@@ -96,7 +96,7 @@
     },
     {
       "id": "stepup",
-      "name": "Step-up",
+      "name": "Step-Up",
       "type": "weighted",
       "repRange": [
         8,
@@ -109,7 +109,7 @@
     },
     {
       "id": "hkpress",
-      "name": "Half-kneeling one-arm press",
+      "name": "Half-Kneeling One-Arm Press",
       "type": "weighted",
       "repRange": [
         8,
@@ -122,7 +122,7 @@
     },
     {
       "id": "latraise",
-      "name": "Leaning lateral raise",
+      "name": "Leaning Lateral Raise",
       "type": "weighted",
       "repRange": [
         12,
@@ -135,7 +135,7 @@
     },
     {
       "id": "rdraise",
-      "name": "Chest-supported rear-delt raise",
+      "name": "Chest-Supported Rear-Delt Raise",
       "type": "weighted",
       "repRange": [
         12,
@@ -147,7 +147,7 @@
     },
     {
       "id": "sideplank",
-      "name": "Side plank",
+      "name": "Side Plank",
       "type": "hold",
       "holdRange": [
         30,
@@ -169,7 +169,7 @@
     },
     {
       "id": "floorpress",
-      "name": "One-arm dumbbell floor press",
+      "name": "One-Arm Dumbbell Floor Press",
       "type": "weighted",
       "repRange": [
         8,
@@ -182,7 +182,7 @@
     },
     {
       "id": "slhip",
-      "name": "Single-leg hip thrust",
+      "name": "Single-Leg Hip Thrust",
       "type": "weighted",
       "repRange": [
         8,
@@ -195,7 +195,7 @@
     },
     {
       "id": "invrow",
-      "name": "Inverted row",
+      "name": "Inverted Row",
       "type": "bodyweight",
       "repRange": [
         8,
@@ -206,7 +206,7 @@
     },
     {
       "id": "revlunge",
-      "name": "Deficit reverse lunge",
+      "name": "Deficit Reverse Lunge",
       "type": "weighted",
       "repRange": [
         8,
@@ -231,7 +231,7 @@
     },
     {
       "id": "ohext",
-      "name": "Overhead triceps extension",
+      "name": "Overhead Triceps Extension",
       "type": "weighted",
       "repRange": [
         12,
@@ -243,7 +243,7 @@
     },
     {
       "id": "ytraise",
-      "name": "Prone Y-T raise",
+      "name": "Prone Y-T Raise",
       "type": "weighted",
       "repRange": [
         12,
@@ -255,7 +255,7 @@
     },
     {
       "id": "kneeraise",
-      "name": "Hanging knee raise",
+      "name": "Hanging Knee Raise",
       "type": "bodyweight",
       "repRange": [
         12,
@@ -271,18 +271,18 @@
     "Heavy"
   ],
   "warmup": [
-    "Brisk walk / marching · 3 min",
-    "Cat-cow ×8",
-    "Open-books ×8 per side",
-    "Wall slides ×10",
-    "Band pull-aparts ×15",
-    "Hip flexor stretch · 30 s per side",
+    "Brisk Walk / Marching · 3 min",
+    "Cat-Cow ×8",
+    "Open-Books ×8 per side",
+    "Wall Slides ×10",
+    "Band Pull-Aparts ×15",
+    "Hip Flexor Stretch · 30 s per side",
     "One light set of the first exercise"
   ],
   "workouts": [
     {
       "id": "A",
-      "name": "A · Legs & chest",
+      "name": "A · Legs & Chest",
       "items": [
         {
           "exerciseId": "bss",
@@ -323,7 +323,7 @@
     },
     {
       "id": "B",
-      "name": "B · Back & cardio",
+      "name": "B · Back & Cardio",
       "items": [
         {
           "exerciseId": "pullup",
@@ -364,7 +364,7 @@
     },
     {
       "id": "C",
-      "name": "C · Full body",
+      "name": "C · Full Body",
       "items": [
         {
           "exerciseId": "floorpress",
