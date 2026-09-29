@@ -1,11 +1,17 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0f1114" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#f4f5f7" media="(prefers-color-scheme: light)">
-<title>Training Tracker</title>
+<meta name="theme-color" content="#f6f5f1">
+<title>Ladder</title>
+<script>
+  // Apply the saved theme before first paint (default: light).
+  try {
+    var t = (JSON.parse(localStorage.getItem('training-tracker:data') || '{}').settings || {}).theme;
+    if (t) document.documentElement.dataset.theme = t;
+  } catch (e) {}
+</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">

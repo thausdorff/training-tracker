@@ -1,5 +1,5 @@
 // Offline cache for the app shell. Bump VERSION on every release.
-const VERSION = 'tt-v1.1.0';
+const VERSION = 'tt-v1.2.0';
 const FILES = [
   './', './index.html', './styles.css', './manifest.webmanifest',
   './src/app.js', './src/engine.js', './src/store.js', './vendor/preact-htm.js',

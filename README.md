@@ -1,4 +1,4 @@
-# Training Tracker
+# Ladder
 
 A personal strength and cardio tracker for your phone. It tells you what to do today,
 logs what you actually did in a tap or two, and uses that history to suggest the next

@@ -2,7 +2,7 @@ import { html, render, useState, useEffect, useRef } from '../vendor/preact-htm.
 import * as E from './engine.js';
 import * as St from './store.js';
 
-export const APP_VERSION = '1.1.0';
+export const APP_VERSION = '1.2.0';
 
 // ---------- small helpers ----------
 const nowIso = () => new Date().toISOString();
@@ -77,6 +77,14 @@ const Icon = {
   data: html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>`,
 };
 
+// ---------- theme ----------
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  const dark = theme === 'dark' || (theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+  const meta = document.querySelector('meta[name=theme-color]');
+  if (meta) meta.content = dark ? '#121412' : '#f6f5f1';
+}
+
 // ---------- app shell ----------
 function App() {
   const [data, setData] = useState(() => cleanup(St.load()));
@@ -107,6 +115,8 @@ function App() {
     back() { history.back(); },
   };
 
+  const theme = (data.settings && data.settings.theme) || 'light';
+  useEffect(() => { applyTheme(theme); }, [theme]);
   const props = { data, update, replaceAll, nav, route };
   let screen;
   if (route.view === 'session') screen = html`<${SessionScreen} ...${props} id=${route.id} />`;
@@ -165,7 +175,7 @@ function TodayScreen({ data, update, nav }) {
   const finishedToday = lastSession && lastSession.date === St.todayStr() && lastSession.finishedAt;
 
   return html`
-    <${TopBar} title="Today" nav=${nav} />
+    <${TopBar} title=${html`<span class="brand">Ladder</span>`} nav=${nav} />
     ${needBackup && html`<div class="banner">
       <span class="spacer">${days == null ? 'No backup exported yet.' : html`Last backup <b>${days} days</b> ago.`}</span>
       <button class="btn sm" onClick=${() => nav.tab('data')}>Export</button></div>`}
@@ -219,6 +229,9 @@ function SessionView({ data, update, nav, session, mode, back }) {
 
   const title = session.workoutName || 'Unplanned session';
   const groups = groupEntries(session.entries);
+  const totalSets = session.entries.reduce((a, e) => a + Math.max(e.plannedSets || 0, e.sets.length), 0);
+  const doneSets = session.entries.reduce((a, e) => a + e.sets.length, 0);
+  const firstOpen = groups.findIndex((g) => g.some((i) => session.entries[i].sets.length < (session.entries[i].plannedSets || 0)));
   const anything = E.sessionHasContent(session);
 
   const finish = () => {
@@ -239,14 +252,23 @@ function SessionView({ data, update, nav, session, mode, back }) {
       </button>
       ${warmOpen && html`<div style="margin-top:6px">${data.warmup.map((w) => {
         const on = (session.warmupDone || []).includes(w);
-        return html`<div class="warmup-item" onClick=${() => mut((s) => {
-          s.warmupDone = on ? s.warmupDone.filter((x) => x !== w) : [...(s.warmupDone || []), w];
-        })}><span class=${`check ${on ? 'on' : ''}`}>${on ? '✓' : ''}</span><span>${w}</span></div>`;
+        return html`<div class="warmup-item" onClick=${() => {
+          mut((s) => { s.warmupDone = on ? s.warmupDone.filter((x) => x !== w) : [...(s.warmupDone || []), w]; });
+          const after = on ? (session.warmupDone || []).length - 1 : (session.warmupDone || []).length + 1;
+          if (!on && after >= data.warmup.length) setWarmOpen(false);
+        }}><span class=${`check ${on ? 'on' : ''}`}>${on ? '✓' : ''}</span><span>${w}</span></div>`;
       })}</div>`}
     </div>` : null;
 
   return html`
-    <${TopBar} title=${title} nav=${nav} back=${back} />
+    <header class="sess-top">
+      <div class="row">
+        ${back ? html`<button class="back" aria-label="Back" onClick=${() => nav.back()}>‹</button>` : null}
+        <h1>${title}</h1>
+        <span class="progress-label">${doneSets}/${totalSets} sets</span>
+      </div>
+      <div class="progress"><div style=${`width:${totalSets ? Math.round((doneSets / totalSets) * 100) : 0}%`}></div></div>
+    </header>
     <div class="session-head">
       ${mode === 'edit'
         ? html`<input type="date" value=${session.date} style="width:auto" onChange=${(e) => e.target.value && mut((s) => { s.date = e.target.value; })} />`
@@ -257,7 +279,7 @@ function SessionView({ data, update, nav, session, mode, back }) {
     </div>
     ${session.deload && html`<p class="small muted" style="margin:-4px 4px 12px">Deload: this session won't affect progression.</p>`}
     ${warm}
-    ${groups.map((g) => html`<${EntryGroup} key=${g.join('-')} data=${data} session=${session} idxs=${g}
+    ${groups.map((g, gi) => html`<${EntryGroup} key=${g.join('-')} data=${data} session=${session} idxs=${g} current=${gi === firstOpen}
         open=${open} setOpen=${setOpen} mut=${mut} />`)}
     ${session.entries.length === 0 && html`<div class="empty">No exercises yet — add one below.</div>`}
     <button class="btn block" style="margin-bottom:12px" onClick=${() => setAdding(true)}>+ Add exercise</button>
@@ -275,7 +297,7 @@ function SessionView({ data, update, nav, session, mode, back }) {
   `;
 }
 
-function EntryGroup({ data, session, idxs, open, setOpen, mut }) {
+function EntryGroup({ data, session, idxs, current, open, setOpen, mut }) {
   const isSuper = idxs.length > 1;
   const entries = idxs.map((i) => session.entries[i]);
   const exs = entries.map((e) => exById(data, e.exerciseId));
@@ -291,7 +313,9 @@ function EntryGroup({ data, session, idxs, open, setOpen, mut }) {
     for (let r = 0; r < counts[0]; r++) rows.push([0, r]);
   }
 
-  return html`<div class="card">
+  const groupDone = rows.length > 0 && entries.every((e, k) => e.sets.length >= counts[k]);
+  const nextRow = rows.findIndex(([k, r]) => r >= entries[k].sets.length);
+  return html`<div class=${`card ${groupDone ? 'done' : ''}`}>
     ${isSuper && html`<div class="superset-label">Superset</div>`}
     ${entries.map((e, k) => {
       const ex = exs[k];
@@ -300,7 +324,8 @@ function EntryGroup({ data, session, idxs, open, setOpen, mut }) {
       const basis = E.basisSession(data, ex.id, session);
       return html`<div class="ex-head">
         <div class="ex-name">${isSuper && html`<span class="ex-letter">${LETTERS[k]}</span>`}<span class="spacer">${ex.name}</span>
-          ${e.sets.length === 0 && html`<button class="btn sm ghost" onClick=${() => {
+          ${e.sets.length > 0 && e.sets.length >= counts[k] && html`<span class="ex-done" aria-label="Done">✓</span>`}
+          ${e.sets.length === 0 && html`<button class="btn sm ghost muted" style="color:var(--ink-3);font-weight:500" onClick=${() => {
             if (confirm(`Remove ${ex.name} from this session?`)) mut((s) => { s.entries.splice(idxs[k], 1); });
           }}>Remove</button>`}
         </div>
@@ -310,7 +335,7 @@ function EntryGroup({ data, session, idxs, open, setOpen, mut }) {
       </div>`;
     })}
     <div class="sets">
-      ${rows.map(([k, r]) => {
+      ${rows.map(([k, r], rowIdx) => {
         const ei = idxs[k];
         const e = entries[k];
         const ex = exs[k];
@@ -320,7 +345,7 @@ function EntryGroup({ data, session, idxs, open, setOpen, mut }) {
           : (e.sets.length ? { ...e.sets[e.sets.length - 1] } : E.setFromTarget(ex, targets[k]));
         const key = `${ei}:${r}`;
         const label = isSuper ? `${LETTERS[k]}${r + 1}` : `${r + 1}`;
-        return html`<${SetRow} key=${key} ex=${ex} data=${data} label=${label} values=${prefill} logged=${logged}
+        return html`<${SetRow} key=${key} ex=${ex} data=${data} label=${label} values=${prefill} logged=${logged} next=${current && rowIdx === nextRow}
           isOpen=${open === key} toggle=${() => setOpen(open === key ? null : key)}
           onLog=${(v) => { mut((s) => { s.entries[ei].sets.push(cleanSet(ex, v)); }); setOpen(null); }}
           onSave=${(v) => { mut((s) => { s.entries[ei].sets[r] = cleanSet(ex, v); }); setOpen(null); }}
@@ -337,13 +362,21 @@ function EntryGroup({ data, session, idxs, open, setOpen, mut }) {
   </div>`;
 }
 
-function SetRow({ ex, data, label, values, logged, isOpen, toggle, onLog, onSave, onDelete, onDropRow }) {
+function setText(ex, v) {
+  const n = (x) => (x == null || x === '' ? '—' : E.fmtNum(Number(x)));
+  if (ex.type === 'cardio') return `${n(v.minutes)} min${v.km != null && v.km !== '' ? ` · ${n(v.km)} km` : ''}`;
+  if (ex.type === 'hold') return `${n(v.seconds)} s`;
+  if (ex.type === 'weighted') return `${n(v.weight)} kg × ${n(v.reps)}`;
+  if (ex.type === 'band') return `${v.band || '—'} × ${n(v.reps)}`;
+  return `${n(v.reps)} reps`;
+}
+
+function SetRow({ ex, data, label, values, logged, next, isOpen, toggle, onLog, onSave, onDelete, onDropRow }) {
   const ok = canLog(ex, values);
-  const text = E.formatSet(ex, values) || (ex.type === 'weighted' ? `? kg × ${values.reps ?? '?'}` : 'Set values');
   return html`<div>
-    <div class=${`set ${logged ? 'logged' : ''}`}>
+    <div class=${`set ${logged ? 'logged' : ''} ${next ? 'next' : ''}`}>
       <span class="idx">${label}</span>
-      <button class="val" onClick=${toggle}>${text.replace('×', ' × ')}</button>
+      <button class="val" onClick=${toggle}>${setText(ex, values)}${values.modifier ? html`<span class="mod">${ex.modifierName || 'Pause'}</span>` : null}</button>
       <button class="tick" aria-label=${logged ? 'Logged — edit' : 'Log set'} disabled=${!logged && !ok}
         onClick=${() => (logged ? toggle() : onLog(values))}>${Icon.check}</button>
     </div>
@@ -778,12 +811,16 @@ function DataScreen({ data, update, replaceAll, nav }) {
     </div>
     <div class="card">
       <h2>Settings</h2>
+      <div class="field"><span>Theme</span><div class="seg">
+        ${[['light', 'Light'], ['dark', 'Dark'], ['system', 'Match phone']].map(([k, l]) => html`
+          <button class=${(data.settings.theme || 'light') === k ? 'on' : ''} onClick=${() => update((d) => { d.settings.theme = k; })}>${l}</button>`)}
+      </div></div>
       <label class="field"><span>Backup reminder after (days)</span>
         <input type="number" inputmode="numeric" value=${data.settings.backupReminderDays}
           onChange=${(e) => update((d) => { d.settings.backupReminderDays = Math.max(1, num(e.target.value) || 7); })} /></label>
       <p class="small muted" style="margin:0">Storage: ${persisted == null ? '…' : persisted ? 'protected from automatic clean-up' : 'not yet protected — install the app to your home screen'}</p>
     </div>
-    <p class="small muted" style="text-align:center">Training Tracker v${APP_VERSION} · ${data.exercises.length} exercises · ${data.sessions.length} sessions</p>
+    <p class="small muted" style="text-align:center">Ladder v${APP_VERSION} · ${data.exercises.length} exercises · ${data.sessions.length} sessions</p>
   `;
 }
 
