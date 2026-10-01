@@ -85,6 +85,11 @@ Suggestions are always recomputed from the logged history. None of this is store
 To change it, edit `program/build-program.mjs` and run `node program/build-program.mjs`.
 Or edit the plan inside the app.
 
+## Design
+
+The visual system (type, colour, spacing, components) is documented in `DESIGN.md`.
+Fonts: Barlow and Barlow Semi Condensed (SIL Open Font License), vendored in `fonts/`.
+
 ## Development
 
 - `src/engine.js` holds the progression rules as pure functions.
