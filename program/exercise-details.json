@@ -1,0 +1,256 @@
+{
+  "kind": "ladder-exercise-details",
+  "version": 1,
+  "exercises": [
+    {
+      "id": "bss",
+      "name": "Bulgarian Split Squat",
+      "muscles": [
+        "Quads",
+        "Glutes"
+      ],
+      "images": [
+        "media/exercises/bss-0.jpg",
+        "media/exercises/bss-1.jpg"
+      ],
+      "imageSource": null
+    },
+    {
+      "id": "dpu",
+      "name": "Deficit Push-Up",
+      "muscles": [
+        "Chest",
+        "Triceps"
+      ],
+      "images": [
+        "media/exercises/dpu-0.jpg",
+        "media/exercises/dpu-1.jpg"
+      ],
+      "imageSource": "Push-Up"
+    },
+    {
+      "id": "dbrow",
+      "name": "One-Arm Dumbbell Row",
+      "muscles": [
+        "Lats",
+        "Upper Back"
+      ],
+      "images": [
+        "media/exercises/dbrow-0.jpg",
+        "media/exercises/dbrow-1.jpg"
+      ],
+      "imageSource": null
+    },
+    {
+      "id": "slrdl",
+      "name": "Single-Leg RDL",
+      "muscles": [
+        "Hamstrings",
+        "Glutes"
+      ],
+      "images": [
+        "media/exercises/slrdl-0.jpg",
+        "media/exercises/slrdl-1.jpg"
+      ],
+      "imageSource": "Stiff-Legged Dumbbell Deadlift"
+    },
+    {
+      "id": "facepull",
+      "name": "Band Face Pull",
+      "muscles": [
+        "Rear Delts",
+        "Upper Back"
+      ],
+      "images": [
+        "media/exercises/facepull-0.jpg",
+        "media/exercises/facepull-1.jpg"
+      ],
+      "imageSource": "Cable Face Pull"
+    },
+    {
+      "id": "pallof",
+      "name": "Pallof Press",
+      "muscles": [
+        "Core",
+        "Obliques"
+      ],
+      "images": [
+        "media/exercises/pallof-0.jpg",
+        "media/exercises/pallof-1.jpg"
+      ],
+      "imageSource": null
+    },
+    {
+      "id": "pullup",
+      "name": "Pull-Up",
+      "muscles": [
+        "Lats",
+        "Upper Back"
+      ],
+      "images": [
+        "media/exercises/pullup-0.jpg",
+        "media/exercises/pullup-1.jpg"
+      ],
+      "imageSource": null
+    },
+    {
+      "id": "stepup",
+      "name": "Step-Up",
+      "muscles": [
+        "Quads",
+        "Glutes"
+      ],
+      "images": [
+        "media/exercises/stepup-0.jpg",
+        "media/exercises/stepup-1.jpg"
+      ],
+      "imageSource": null
+    },
+    {
+      "id": "hkpress",
+      "name": "Half-Kneeling One-Arm Press",
+      "muscles": [
+        "Shoulders",
+        "Triceps"
+      ],
+      "images": [
+        "media/exercises/hkpress-0.jpg",
+        "media/exercises/hkpress-1.jpg"
+      ],
+      "imageSource": "Standing One-Arm Press"
+    },
+    {
+      "id": "latraise",
+      "name": "Leaning Lateral Raise",
+      "muscles": [
+        "Side Delts"
+      ],
+      "images": [
+        "media/exercises/latraise-0.jpg",
+        "media/exercises/latraise-1.jpg"
+      ],
+      "imageSource": null
+    },
+    {
+      "id": "rdraise",
+      "name": "Chest-Supported Rear-Delt Raise",
+      "muscles": [
+        "Rear Delts",
+        "Upper Back"
+      ],
+      "images": [
+        "media/exercises/rdraise-0.jpg",
+        "media/exercises/rdraise-1.jpg"
+      ],
+      "imageSource": null
+    },
+    {
+      "id": "sideplank",
+      "name": "Side Plank",
+      "muscles": [
+        "Obliques"
+      ],
+      "images": [
+        "media/exercises/sideplank-0.jpg",
+        "media/exercises/sideplank-1.jpg"
+      ],
+      "imageSource": null
+    },
+    {
+      "id": "floorpress",
+      "name": "One-Arm Dumbbell Floor Press",
+      "muscles": [
+        "Chest",
+        "Triceps",
+        "Core"
+      ],
+      "images": [
+        "media/exercises/floorpress-0.jpg",
+        "media/exercises/floorpress-1.jpg"
+      ],
+      "imageSource": "Two-Arm Dumbbell Floor Press"
+    },
+    {
+      "id": "slhip",
+      "name": "Single-Leg Hip Thrust",
+      "muscles": [
+        "Glutes"
+      ],
+      "images": [
+        "media/exercises/slhip-0.jpg",
+        "media/exercises/slhip-1.jpg"
+      ],
+      "imageSource": "Single-Leg Glute Bridge"
+    },
+    {
+      "id": "invrow",
+      "name": "Inverted Row",
+      "muscles": [
+        "Upper Back",
+        "Lats"
+      ],
+      "images": [
+        "media/exercises/invrow-0.jpg",
+        "media/exercises/invrow-1.jpg"
+      ],
+      "imageSource": null
+    },
+    {
+      "id": "revlunge",
+      "name": "Deficit Reverse Lunge",
+      "muscles": [
+        "Quads",
+        "Glutes"
+      ],
+      "images": [
+        "media/exercises/revlunge-0.jpg",
+        "media/exercises/revlunge-1.jpg"
+      ],
+      "imageSource": null
+    },
+    {
+      "id": "curl",
+      "name": "Curl",
+      "muscles": [
+        "Biceps"
+      ],
+      "images": [
+        "media/exercises/curl-0.jpg",
+        "media/exercises/curl-1.jpg"
+      ],
+      "imageSource": null
+    },
+    {
+      "id": "ohext",
+      "name": "Overhead Triceps Extension",
+      "muscles": [
+        "Triceps"
+      ],
+      "images": [
+        "media/exercises/ohext-0.jpg",
+        "media/exercises/ohext-1.jpg"
+      ],
+      "imageSource": null
+    },
+    {
+      "id": "ytraise",
+      "name": "Prone Y-T Raise",
+      "muscles": [
+        "Lower Traps",
+        "Upper Back"
+      ]
+    },
+    {
+      "id": "kneeraise",
+      "name": "Hanging Knee Raise",
+      "muscles": [
+        "Abs"
+      ],
+      "images": [
+        "media/exercises/kneeraise-0.jpg",
+        "media/exercises/kneeraise-1.jpg"
+      ],
+      "imageSource": "Hanging Leg Raise"
+    }
+  ]
+}

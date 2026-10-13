@@ -1,6 +1,7 @@
 // Builds program/3-day-home-plan.json (import via Data → Import JSON).
 import fs from 'node:fs';
 import { validateData, emptyData } from '../src/engine.js';
+import { DETAILS, detailsFor } from './exercise-details.mjs';
 
 const W = (id, name, range, mod, extra = {}) => ({ id, name, type: 'weighted', repRange: range, ladder: 'modifier', modifierName: mod, weightStep: 2, ...extra });
 const BW = (id, name, range, mod, extra = {}) => ({ id, name, type: 'bodyweight', repRange: range, ladder: 'modifier', modifierName: mod, ...extra });
@@ -53,6 +54,14 @@ const warmup = [
   'One light set of the first exercise',
 ];
 
+for (const ex of exercises) Object.assign(ex, detailsFor(ex.id));
+
 const data = validateData({ ...emptyData(), exercises, workouts, warmup, bands: ['Light', 'Medium', 'Heavy'] });
 fs.writeFileSync(new URL('./3-day-home-plan.json', import.meta.url), `${JSON.stringify(data, null, 2)}\n`);
 console.log(`wrote ${exercises.length} exercises, ${workouts.length} workouts`);
+
+// Details-only file: adds muscles and pictures to exercises you already have, leaving history alone.
+const details = { kind: 'ladder-exercise-details', version: 1,
+  exercises: exercises.filter((e) => DETAILS[e.id]).map((e) => ({ id: e.id, name: e.name, ...detailsFor(e.id) })) };
+fs.writeFileSync(new URL('./exercise-details.json', import.meta.url), `${JSON.stringify(details, null, 2)}\n`);
+console.log(`wrote details for ${details.exercises.length} exercises`);

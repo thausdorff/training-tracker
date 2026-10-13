@@ -12,7 +12,16 @@
       "ladder": "modifier",
       "modifierName": "2 s pause at bottom",
       "weightStep": 2,
-      "perSide": true
+      "perSide": true,
+      "muscles": [
+        "Quads",
+        "Glutes"
+      ],
+      "images": [
+        "media/exercises/bss-0.jpg",
+        "media/exercises/bss-1.jpg"
+      ],
+      "imageSource": null
     },
     {
       "id": "dpu",
@@ -23,7 +32,16 @@
         12
       ],
       "ladder": "modifier",
-      "modifierName": "2 s pause above floor"
+      "modifierName": "2 s pause above floor",
+      "muscles": [
+        "Chest",
+        "Triceps"
+      ],
+      "images": [
+        "media/exercises/dpu-0.jpg",
+        "media/exercises/dpu-1.jpg"
+      ],
+      "imageSource": "Push-Up"
     },
     {
       "id": "dbrow",
@@ -36,7 +54,16 @@
       "ladder": "modifier",
       "modifierName": "2 s pause at top",
       "weightStep": 2,
-      "perSide": true
+      "perSide": true,
+      "muscles": [
+        "Lats",
+        "Upper Back"
+      ],
+      "images": [
+        "media/exercises/dbrow-0.jpg",
+        "media/exercises/dbrow-1.jpg"
+      ],
+      "imageSource": null
     },
     {
       "id": "slrdl",
@@ -49,7 +76,16 @@
       "ladder": "modifier",
       "modifierName": "2 s pause at deepest point",
       "weightStep": 2,
-      "perSide": true
+      "perSide": true,
+      "muscles": [
+        "Hamstrings",
+        "Glutes"
+      ],
+      "images": [
+        "media/exercises/slrdl-0.jpg",
+        "media/exercises/slrdl-1.jpg"
+      ],
+      "imageSource": "Stiff-Legged Dumbbell Deadlift"
     },
     {
       "id": "facepull",
@@ -60,7 +96,16 @@
         16
       ],
       "ladder": "modifier",
-      "modifierName": "2 s pause at contraction"
+      "modifierName": "2 s pause at contraction",
+      "muscles": [
+        "Rear Delts",
+        "Upper Back"
+      ],
+      "images": [
+        "media/exercises/facepull-0.jpg",
+        "media/exercises/facepull-1.jpg"
+      ],
+      "imageSource": "Cable Face Pull"
     },
     {
       "id": "pallof",
@@ -72,7 +117,16 @@
       ],
       "ladder": "modifier",
       "modifierName": "2 s hold at press-out",
-      "perSide": true
+      "perSide": true,
+      "muscles": [
+        "Core",
+        "Obliques"
+      ],
+      "images": [
+        "media/exercises/pallof-0.jpg",
+        "media/exercises/pallof-1.jpg"
+      ],
+      "imageSource": null
     },
     {
       "id": "cardio-easy",
@@ -92,7 +146,16 @@
       ],
       "ladder": "modifier",
       "modifierName": "2 s pause at top",
-      "weightStep": 2
+      "weightStep": 2,
+      "muscles": [
+        "Lats",
+        "Upper Back"
+      ],
+      "images": [
+        "media/exercises/pullup-0.jpg",
+        "media/exercises/pullup-1.jpg"
+      ],
+      "imageSource": null
     },
     {
       "id": "stepup",
@@ -105,7 +168,16 @@
       "ladder": "modifier",
       "modifierName": "2 s pause at bottom",
       "weightStep": 2,
-      "perSide": true
+      "perSide": true,
+      "muscles": [
+        "Quads",
+        "Glutes"
+      ],
+      "images": [
+        "media/exercises/stepup-0.jpg",
+        "media/exercises/stepup-1.jpg"
+      ],
+      "imageSource": null
     },
     {
       "id": "hkpress",
@@ -118,7 +190,16 @@
       "ladder": "modifier",
       "modifierName": "2 s pause at shoulder",
       "weightStep": 2,
-      "perSide": true
+      "perSide": true,
+      "muscles": [
+        "Shoulders",
+        "Triceps"
+      ],
+      "images": [
+        "media/exercises/hkpress-0.jpg",
+        "media/exercises/hkpress-1.jpg"
+      ],
+      "imageSource": "Standing One-Arm Press"
     },
     {
       "id": "latraise",
@@ -131,7 +212,15 @@
       "ladder": "modifier",
       "modifierName": "3 s lowering",
       "weightStep": 2,
-      "perSide": true
+      "perSide": true,
+      "muscles": [
+        "Side Delts"
+      ],
+      "images": [
+        "media/exercises/latraise-0.jpg",
+        "media/exercises/latraise-1.jpg"
+      ],
+      "imageSource": null
     },
     {
       "id": "rdraise",
@@ -143,7 +232,16 @@
       ],
       "ladder": "modifier",
       "modifierName": "2 s pause at top",
-      "weightStep": 2
+      "weightStep": 2,
+      "muscles": [
+        "Rear Delts",
+        "Upper Back"
+      ],
+      "images": [
+        "media/exercises/rdraise-0.jpg",
+        "media/exercises/rdraise-1.jpg"
+      ],
+      "imageSource": null
     },
     {
       "id": "sideplank",
@@ -157,7 +255,15 @@
       "modifierName": "Top leg raised",
       "holdStep": 5,
       "holdCeiling": null,
-      "perSide": true
+      "perSide": true,
+      "muscles": [
+        "Obliques"
+      ],
+      "images": [
+        "media/exercises/sideplank-0.jpg",
+        "media/exercises/sideplank-1.jpg"
+      ],
+      "imageSource": null
     },
     {
       "id": "cardio-b",
@@ -178,7 +284,17 @@
       "ladder": "modifier",
       "modifierName": "2 s pause at bottom",
       "weightStep": 2,
-      "perSide": true
+      "perSide": true,
+      "muscles": [
+        "Chest",
+        "Triceps",
+        "Core"
+      ],
+      "images": [
+        "media/exercises/floorpress-0.jpg",
+        "media/exercises/floorpress-1.jpg"
+      ],
+      "imageSource": "Two-Arm Dumbbell Floor Press"
     },
     {
       "id": "slhip",
@@ -191,7 +307,15 @@
       "ladder": "modifier",
       "modifierName": "2 s pause at top",
       "weightStep": 2,
-      "perSide": true
+      "perSide": true,
+      "muscles": [
+        "Glutes"
+      ],
+      "images": [
+        "media/exercises/slhip-0.jpg",
+        "media/exercises/slhip-1.jpg"
+      ],
+      "imageSource": "Single-Leg Glute Bridge"
     },
     {
       "id": "invrow",
@@ -202,7 +326,16 @@
         12
       ],
       "ladder": "modifier",
-      "modifierName": "2 s pause at top"
+      "modifierName": "2 s pause at top",
+      "muscles": [
+        "Upper Back",
+        "Lats"
+      ],
+      "images": [
+        "media/exercises/invrow-0.jpg",
+        "media/exercises/invrow-1.jpg"
+      ],
+      "imageSource": null
     },
     {
       "id": "revlunge",
@@ -215,7 +348,16 @@
       "ladder": "modifier",
       "modifierName": "2 s pause near bottom",
       "weightStep": 2,
-      "perSide": true
+      "perSide": true,
+      "muscles": [
+        "Quads",
+        "Glutes"
+      ],
+      "images": [
+        "media/exercises/revlunge-0.jpg",
+        "media/exercises/revlunge-1.jpg"
+      ],
+      "imageSource": null
     },
     {
       "id": "curl",
@@ -227,7 +369,15 @@
       ],
       "ladder": "modifier",
       "modifierName": "3 s lowering",
-      "weightStep": 2
+      "weightStep": 2,
+      "muscles": [
+        "Biceps"
+      ],
+      "images": [
+        "media/exercises/curl-0.jpg",
+        "media/exercises/curl-1.jpg"
+      ],
+      "imageSource": null
     },
     {
       "id": "ohext",
@@ -239,7 +389,15 @@
       ],
       "ladder": "modifier",
       "modifierName": "3 s lowering",
-      "weightStep": 2
+      "weightStep": 2,
+      "muscles": [
+        "Triceps"
+      ],
+      "images": [
+        "media/exercises/ohext-0.jpg",
+        "media/exercises/ohext-1.jpg"
+      ],
+      "imageSource": null
     },
     {
       "id": "ytraise",
@@ -251,7 +409,11 @@
       ],
       "ladder": "modifier",
       "modifierName": "2 s hold at top",
-      "weightStep": 2
+      "weightStep": 2,
+      "muscles": [
+        "Lower Traps",
+        "Upper Back"
+      ]
     },
     {
       "id": "kneeraise",
@@ -262,7 +424,15 @@
         16
       ],
       "ladder": "modifier",
-      "modifierName": "3 s lowering"
+      "modifierName": "3 s lowering",
+      "muscles": [
+        "Abs"
+      ],
+      "images": [
+        "media/exercises/kneeraise-0.jpg",
+        "media/exercises/kneeraise-1.jpg"
+      ],
+      "imageSource": "Hanging Leg Raise"
     }
   ],
   "bands": [

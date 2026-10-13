@@ -66,6 +66,7 @@ Suggestions are always recomputed from the logged history. None of this is store
                   "repRange": [8,12], "ladder": "simple|modifier", "modifierName",
                   "weightStep", "holdStep", "holdCeiling", "holdRange"?, "durationStep",
                   "durationCeiling", "startMinutes"?, "perSide"?,
+                  "muscles"?: ["Quads", "Glutes"], "images"?: [start, end], "imageSource"?,
                   "restartAt"? }],
   "bands": ["Yellow", "Red", "Black"],            // light → heavy
   "warmup": ["Arm circles", "..."],
@@ -89,6 +90,18 @@ Or edit the plan inside the app.
 
 The visual system (type, colour, spacing, components) is documented in `DESIGN.md`.
 Fonts: Barlow and Barlow Semi Condensed (SIL Open Font License), vendored in `fonts/`.
+
+## Exercise pictures and muscles
+
+Each exercise can have muscles and two photos (start and end position), shown as a thumbnail
+in the workout. Tap it for a larger view. Photos come from
+[Free Exercise DB](https://github.com/yuhonas/free-exercise-db) (public domain).
+
+- Your plan's photos ship in `media/exercises/`.
+- `program/exercise-details.json` adds muscles and photos to exercises you already have:
+  **Data → Import backup** merges it by exercise and leaves your history alone.
+- **Program → exercise → Choose from library** searches the full library (needs a connection)
+  and saves the chosen photos inside your data, so they work offline and go into backups.
 
 ## Development
 

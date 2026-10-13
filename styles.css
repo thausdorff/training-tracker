@@ -363,3 +363,19 @@ table.log tr:active td { background: var(--fill); }
 .sheet-head h2 { flex: 1; font: 600 20px var(--f-num); }
 
 .footer-meta { text-align: center; font-size: 13px; color: var(--ink-3); margin-top: 32px; }
+
+/* ---------- exercise pictures ---------- */
+.thumb { display: block; flex: none; border-radius: var(--r-sm); overflow: hidden; background: var(--fill); border: 1px solid var(--line); padding: 0; }
+.thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; }
+button.thumb:active { opacity: .7; }
+.ex-head { display: flex; align-items: flex-start; gap: 12px; }
+.ex-head-main { flex: 1; min-width: 0; }
+.ex-head .thumb { margin-top: 2px; }
+.muscles { font-size: 13px; line-height: 18px; color: var(--ink-3); font-weight: 500; margin-top: 1px; }
+.ex-intro { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.info-photo { display: block; width: 100%; border-radius: var(--r-md); overflow: hidden; background: var(--fill); }
+.info-photo img { display: block; width: 100%; max-height: 52vh; object-fit: contain; }
+.info-frames { display: flex; gap: 16px; justify-content: center; margin: 8px 0 4px; font-size: 13px; font-weight: 500; color: var(--ink-3); }
+.info-frames .on { color: var(--ink); }
+.info-row { display: flex; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); border-top: 1px solid var(--line); margin-top: 8px; }
+.info-row .k { width: 72px; flex: none; color: var(--ink-3); font-size: 14px; font-weight: 500; padding-top: 1px; }

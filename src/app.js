@@ -2,7 +2,7 @@ import { html, render, useState, useEffect, useRef } from '../vendor/preact-htm.
 import * as E from './engine.js';
 import * as St from './store.js';
 
-export const APP_VERSION = '2.0.0';
+export const APP_VERSION = '2.1.0';
 
 // ---------- small helpers ----------
 const nowIso = () => new Date().toISOString();
@@ -323,6 +323,7 @@ function SessionView({ data, update, nav, session, mode, back }) {
 }
 
 function EntryGroup({ data, session, idxs, current, collapsible, onExpand, open, setOpen, mut }) {
+  const [info, setInfo] = useState(null);
   const isSuper = idxs.length > 1;
   const entries = idxs.map((i) => session.entries[i]);
   const exs = entries.map((e) => exById(data, e.exerciseId));
@@ -356,19 +357,23 @@ function EntryGroup({ data, session, idxs, current, collapsible, onExpand, open,
       const t = targets[k];
       const basis = E.basisSession(data, ex.id, session);
       const exDone = e.sets.length > 0 && e.sets.length >= counts[k];
-      return html`<div class="ex-head">
+      return html`<div class="ex-head"><div class="ex-head-main">
         <div class="ex-title">${isSuper && html`<span class="ex-letter">${LETTERS[k]}</span>`}<h3>${ex.name}</h3>
           ${exDone && html`<span class="done-row"><span class="check" aria-label="Done">${Icon.check()}</span></span>`}
           ${e.sets.length === 0 && html`<button class="link sm quiet" onClick=${() => {
             if (confirm(`Remove ${ex.name} from this session?`)) mut((s) => { s.entries.splice(idxs[k], 1); });
           }}>Remove</button>`}
         </div>
+        ${ex.muscles && ex.muscles.length > 0 && html`<div class="muscles">${ex.muscles.join(', ')}</div>`}
         <div class="target">${E.formatTarget(ex, t, e.plannedSets || counts[k] || 1)}${ex.perSide ? html`<span class="side">per side</span>` : ''}</div>
         <${Ladder} info=${E.ladderInfo(ex, t, data)} />
         ${t && t.reason && html`<p class="why">${t.reason}</p>`}
         ${basis && html`<p class="why last">Last time, ${fmtDate(basis.session.date)}: <span class="num">${E.summarizeSets(ex, basis.sets)}</span></p>`}
+        </div>
+        <${Thumb} ex=${ex} size=${64} onClick=${() => setInfo(ex.id)} />
       </div>`;
     })}
+    ${info && html`<${ExerciseInfo} ex=${exById(data, info)} onClose=${() => setInfo(null)} />`}
     <div class="sets">
       ${rows.map(([k, r], rowIdx) => {
         const ei = idxs[k];
@@ -395,6 +400,38 @@ function EntryGroup({ data, session, idxs, current, collapsible, onExpand, open,
       })}>${Icon.plus()} Add set${isSuper ? ` ${LETTERS[k]}` : ''}</button>`)}
     </div>
   </section>`;
+}
+
+function Thumb({ ex, size = 40, onClick }) {
+  if (!ex || !ex.images || !ex.images.length) return null;
+  const img = html`<img src=${ex.images[0]} alt="" loading="lazy" width=${size} height=${size} />`;
+  return onClick
+    ? html`<button class="thumb" style=${`width:${size}px;height:${size}px`} aria-label=${`Show ${ex.name}`} onClick=${onClick}>${img}</button>`
+    : html`<span class="thumb" style=${`width:${size}px;height:${size}px`}>${img}</span>`;
+}
+
+/** Bottom sheet: the exercise's start/end photos (alternating) and the muscles it works. */
+function ExerciseInfo({ ex, onClose }) {
+  const [frame, setFrame] = useState(0);
+  const imgs = (ex && ex.images) || [];
+  useEffect(() => {
+    if (imgs.length < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+    const t = setInterval(() => setFrame((f) => (f + 1) % imgs.length), 1100);
+    return () => clearInterval(t);
+  }, [imgs.length]);
+  if (!ex) return null;
+  return html`<div class="sheet-backdrop" onClick=${(e) => e.target === e.currentTarget && onClose()}>
+    <div class="sheet" role="dialog" aria-label=${ex.name}>
+      <div class="grab"></div>
+      <div class="sheet-head"><h2>${ex.name}</h2><button class="link sm" onClick=${onClose}>Close</button></div>
+      ${imgs.length > 0 && html`<button class="info-photo" aria-label="Next photo" onClick=${() => setFrame((frame + 1) % imgs.length)}>
+        <img src=${imgs[frame]} alt=${`${ex.name}, ${frame === 0 ? 'start' : 'end'} position`} /></button>
+        ${imgs.length > 1 && html`<div class="info-frames" aria-hidden="true">${imgs.map((_, i) => html`<span class=${i === frame ? 'on' : ''}>${i === 0 ? 'Start' : 'End'}</span>`)}</div>`}`}
+      ${ex.muscles && ex.muscles.length > 0 && html`<div class="info-row"><span class="k">Muscles</span><span>${ex.muscles.join(', ')}</span></div>`}
+      ${ex.imageSource && html`<p class="meta" style="margin-top:12px">Photo shows a similar exercise: ${ex.imageSource}.</p>`}
+      ${imgs.length > 0 && html`<p class="meta" style="margin-top:4px">Photos: Free Exercise DB, public domain.</p>`}
+    </div>
+  </div>`;
 }
 
 function Ladder({ info }) {
@@ -542,6 +579,7 @@ function HistoryScreen({ data, nav }) {
 }
 
 function ExerciseHistory({ data, nav, id }) {
+  const [info, setInfo] = useState(false);
   const ex = exById(data, id);
   if (!ex) return html`<${TopBar} title="Exercise" nav=${nav} back /><p class="empty">This exercise no longer exists.</p>`;
   const pr = E.personalRecord(data, id);
@@ -549,6 +587,11 @@ function ExerciseHistory({ data, nav, id }) {
   const rows = E.sortedSessions(data).filter((s) => E.setsFor(s, id).length).reverse();
   return html`
     <${TopBar} title=${ex.name} nav=${nav} back />
+    ${(ex.images?.length || ex.muscles?.length) ? html`<div class="ex-intro">
+      <${Thumb} ex=${ex} size=${56} onClick=${() => setInfo(true)} />
+      <div><div class="meta">Muscles</div><div>${ex.muscles?.length ? ex.muscles.join(', ') : 'Not set'}</div></div>
+    </div>` : null}
+    ${info && html`<${ExerciseInfo} ex=${ex} onClose=${() => setInfo(false)} />`}
     <div class="stats">
       ${pr && html`<div class="stat"><div class="k">${pr.kind}</div><div class="v">${pr.label}</div><div class="s">${fmtDate(pr.date)}</div></div>`}
       <div class="stat"><div class="k">Sessions</div><div class="v">${rows.length}</div><div class="s">${rows.length ? `since ${fmtDate(rows[rows.length - 1].date)}` : ''}</div></div>
@@ -683,6 +726,7 @@ function ProgramScreen({ data, update, nav }) {
       <div class="list">
         ${[...data.exercises].sort((a, b) => a.name.localeCompare(b.name)).map((ex) => html`
           <button class="li" onClick=${() => nav.go({ tab: 'program', view: 'exercise', id: ex.id })}>
+            <${Thumb} ex=${ex} size=${44} />
             <span class="li-main"><div class="li-title">${ex.name}</div><div class="li-sub">${exerciseSummary(ex)}</div></span>${Icon.chev()}</button>`)}
         <button class="li li-add" onClick=${() => nav.go({ tab: 'program', view: 'exercise', id: 'new' })}>${Icon.plus()} New exercise</button>
       </div>
@@ -767,6 +811,8 @@ function ExerciseEditor({ data, update, nav, id }) {
   const orig = isNew ? null : exById(data, id);
   const [f, setF] = useState(() => (orig ? structuredClone(orig) : { id: St.uid(), name: '', type: 'weighted', ...structuredClone(E.EXERCISE_DEFAULTS) }));
   const [err, setErr] = useState('');
+  const [musclesText, setMusclesText] = useState(() => ((orig && orig.muscles) || []).join(', '));
+  const [picking, setPicking] = useState(false);
   if (!isNew && !orig) return html`<${TopBar} title="Exercise" nav=${nav} back /><p class="empty">This exercise no longer exists.</p>`;
   const hasHistory = !isNew && data.sessions.some((s) => E.setsFor(s, id).length);
   const set = (k, v) => setF({ ...f, [k]: v });
@@ -777,6 +823,7 @@ function ExerciseEditor({ data, update, nav, id }) {
     if (!name) return setErr('Enter a name for this exercise.');
     if (data.exercises.some((e) => e.id !== f.id && e.name.toLowerCase() === name.toLowerCase())) return setErr('Another exercise already has this name. Choose a different one.');
     const clean = { ...f, name };
+    clean.muscles = musclesText.split(',').map((m) => m.trim()).filter(Boolean);
     for (const k of ['weightStep', 'holdStep', 'durationStep']) if (clean[k] !== undefined) clean[k] = num(clean[k]) ?? E.EXERCISE_DEFAULTS[k];
     for (const k of ['holdCeiling', 'durationCeiling', 'startMinutes']) clean[k] = num(clean[k]);
     const next = E.applyExerciseEdit(orig, clean, nowIso());
@@ -805,6 +852,18 @@ function ExerciseEditor({ data, update, nav, id }) {
     <${TopBar} title=${isNew ? 'New exercise' : orig.name} nav=${nav} back />
     <div style="padding-top:4px">
       <label class="field"><span class="lbl">Name</span><input type="text" value=${f.name} onInput=${(e) => set('name', e.target.value)} /></label>
+      <label class="field"><span class="lbl">Muscles</span><input type="text" placeholder="For example Quads, Glutes" value=${musclesText} onInput=${(e) => setMusclesText(e.target.value)} />
+        <span class="hint">Separate with commas.</span></label>
+      <div class="field"><span class="lbl">Picture</span>
+        <div class="row" style="gap:16px">
+          <${Thumb} ex=${f} size=${64} />
+          <div class="row wrap" style="gap:4px 20px">
+            <button class="link sm" onClick=${() => setPicking(true)}>${f.images && f.images.length ? 'Change picture' : 'Choose from library'}</button>
+            ${f.images && f.images.length > 0 && html`<button class="link sm quiet" onClick=${() => setF({ ...f, images: [], imageSource: null })}>Remove</button>`}
+          </div>
+        </div>
+        ${f.imageSource && html`<span class="hint">Shows a similar exercise: ${f.imageSource}.</span>`}
+      </div>
       <label class="field"><span class="lbl">Type</span>
         <select value=${f.type} disabled=${hasHistory} onChange=${(e) => set('type', e.target.value)}>
           ${E.TYPES.map((t) => html`<option value=${t}>${E.TYPE_LABELS[t]}</option>`)}
@@ -850,7 +909,53 @@ function ExerciseEditor({ data, update, nav, id }) {
     ${err && html`<p class="error" role="alert">${err}</p>`}
     <button class="btn primary block" style="margin-top:20px" onClick=${saveEx}>${isNew ? 'Create exercise' : 'Save changes'}</button>
     ${!isNew && html`<div class="danger-zone"><button class="link danger" onClick=${del}>Delete exercise</button></div>`}
+    ${picking && html`<${LibraryPicker} query=${f.name} onClose=${() => setPicking(false)} onPick=${(pick) => {
+      setF({ ...f, images: pick.images, imageSource: pick.name.toLowerCase() === (f.name || '').trim().toLowerCase() ? null : pick.name });
+      if (!musclesText.trim()) setMusclesText(pick.muscles.join(', '));
+      setPicking(false);
+    }} />`}
   `;
+}
+
+/** Search Free Exercise DB (online) and copy the chosen exercise's photos into your data. */
+function LibraryPicker({ query, onPick, onClose }) {
+  const [lib, setLib] = useState(null);
+  const [q, setQ] = useState(query || '');
+  const [state, setState] = useState({ loading: true, error: null, busy: null });
+  useEffect(() => {
+    St.loadLibrary().then((l) => { setLib(l); setState({ loading: false, error: null, busy: null }); })
+      .catch(() => setState({ loading: false, error: 'Couldn’t load the exercise library. Check your connection and try again.', busy: null }));
+  }, []);
+  const words = q.toLowerCase().split(/\s+/).filter((w) => w.length > 1);
+  const results = !lib ? [] : lib
+    .map((e) => ({ e, score: words.filter((w) => e.name.toLowerCase().includes(w)).length }))
+    .filter((x) => (words.length ? x.score > 0 : true))
+    .sort((a, b) => b.score - a.score || a.e.name.localeCompare(b.e.name))
+    .slice(0, 40).map((x) => x.e);
+  const choose = async (e) => {
+    setState({ ...state, busy: e.id, error: null });
+    try {
+      const images = await Promise.all(e.images.slice(0, 2).map((p) => St.fetchImageAsDataUrl(St.libImageUrl(p))));
+      onPick({ name: e.name, images, muscles: e.primaryMuscles.concat(e.secondaryMuscles).slice(0, 3).map(St.muscleLabel) });
+    } catch { setState({ ...state, busy: null, error: 'Couldn’t download that picture. Try again.' }); }
+  };
+  return html`<div class="sheet-backdrop" onClick=${(e) => e.target === e.currentTarget && onClose()}>
+    <div class="sheet" role="dialog" aria-label="Choose a picture">
+      <div class="grab"></div>
+      <div class="sheet-head"><h2>Choose a picture</h2><button class="link sm" onClick=${onClose}>Close</button></div>
+      <input type="text" placeholder="Search 800+ exercises" aria-label="Search exercise library" value=${q} onInput=${(e) => setQ(e.target.value)} />
+      ${state.loading && html`<p class="empty">Loading the exercise library…</p>`}
+      ${state.error && html`<p class="error" role="alert">${state.error}</p>`}
+      <div class="list" style="margin-top:8px">
+        ${results.map((e) => html`<button class="li" disabled=${!!state.busy} onClick=${() => choose(e)}>
+          <span class="thumb" style="width:44px;height:44px"><img src=${St.libImageUrl(e.images[0])} alt="" loading="lazy" width="44" height="44" /></span>
+          <span class="li-main"><div class="li-title">${e.name}</div><div class="li-sub">${e.primaryMuscles.map(St.muscleLabel).join(', ')}, ${e.equipment || 'body only'}</div></span>
+          ${state.busy === e.id && html`<span class="meta">Adding…</span>`}</button>`)}
+      </div>
+      ${lib && results.length === 0 && html`<p class="empty">No exercise matches “${q}”. Try a shorter search.</p>`}
+      <p class="meta" style="margin-top:12px">From Free Exercise DB, public domain. The photos are saved with your data.</p>
+    </div>
+  </div>`;
 }
 
 // ---------- Data ----------
@@ -869,7 +974,15 @@ function DataScreen({ data, update, replaceAll, nav }) {
     e.target.value = '';
     if (!file) return;
     try {
-      const d = await St.readImportFile(file);
+      const res = await St.readImportFile(file);
+      if (res.kind === 'details') {
+        if (!confirm(`Add muscles and pictures from this file to your matching exercises? Your history and settings stay as they are.`)) return;
+        const n = St.mergeExerciseDetails(structuredClone(data), res.exercises);
+        update((d) => { St.mergeExerciseDetails(d, res.exercises); });
+        setMsg({ text: n ? `Added muscles and pictures to ${n} exercise${n === 1 ? '' : 's'}.` : 'No exercises in this file match yours.' });
+        return;
+      }
+      const d = res.data;
       const n = d.sessions.length;
       if (!confirm(`Replace ALL current data with this file (${d.exercises.length} exercises, ${n} sessions)?`)) return;
       replaceAll(d);
