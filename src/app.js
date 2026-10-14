@@ -2,7 +2,7 @@ import { html, render, useState, useEffect, useRef } from '../vendor/preact-htm.
 import * as E from './engine.js';
 import * as St from './store.js';
 
-export const APP_VERSION = '2.1.0';
+export const APP_VERSION = '2.1.1';
 
 // ---------- small helpers ----------
 const nowIso = () => new Date().toISOString();

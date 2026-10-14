@@ -1,5 +1,5 @@
 // Offline cache for the app shell. Bump VERSION on every release.
-const VERSION = 'tt-v2.1.0';
+const VERSION = 'tt-v2.1.1';
 const MEDIA = 'tt-media'; // photos rarely change, so this cache survives releases
 const FILES = [
   './', './index.html', './styles.css', './manifest.webmanifest',
@@ -19,7 +19,6 @@ self.addEventListener('activate', (e) => {
     .then(() => self.clients.claim()));
 });
 
-// Cache first (works offline); the network is only used for files not in the cache.
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
@@ -29,5 +28,19 @@ self.addEventListener('fetch', (e) => {
       || fetch(e.request).then((r) => { if (r.ok) c.put(e.request, r.clone()); return r; }))));
     return;
   }
-  e.respondWith(caches.match(e.request, { ignoreSearch: true }).then((hit) => hit || fetch(e.request)));
+  if (url.origin !== self.location.origin) return;
+  // App files: network first so a new release shows up on the next open; the cache is the offline fallback.
+  e.respondWith((async () => {
+    const cache = await caches.open(VERSION);
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 3000);
+      const res = await fetch(e.request, { cache: 'no-cache', signal: ctrl.signal });
+      clearTimeout(timer);
+      if (res.ok) cache.put(e.request, res.clone());
+      return res;
+    } catch {
+      return (await cache.match(e.request, { ignoreSearch: true })) || Response.error();
+    }
+  })());
 });
