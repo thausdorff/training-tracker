@@ -89,6 +89,17 @@ Suggestions are always recomputed from the logged history. None of this is store
 To change it, edit `program/build-program.mjs` and run `node program/build-program.mjs`.
 Or edit the plan inside the app.
 
+## History views
+
+- **Exercises:** every exercise with a trend line, where it stands now, and its change over the
+  last 4 weeks in ladder steps (one rep, or one move up the ladder). Exercises with no progress
+  across their last three regular sessions are marked *Stalled* and listed first.
+- **Exercise page:** the weakest set of each session, with shaded sessions for the modifier and a
+  dashed rule where the weight or band changed.
+- **Sessions:** a 12-week strip, one box per workout per week (done, deload, optional), above
+  the session list.
+- **Muscles:** working sets per muscle this week, with the average of the previous 4 weeks.
+
 ## Design
 
 The visual system (type, colour, spacing, components) is documented in `DESIGN.md`.

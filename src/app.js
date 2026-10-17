@@ -1,8 +1,9 @@
 import { html, render, useState, useEffect, useRef } from '../vendor/preact-htm.js';
 import * as E from './engine.js';
 import * as St from './store.js';
+import * as I from './insights.js';
 
-export const APP_VERSION = '2.2.0';
+export const APP_VERSION = '2.3.0';
 
 // ---------- small helpers ----------
 const nowIso = () => new Date().toISOString();
@@ -540,30 +541,56 @@ const monthLabel = (iso) => { const [y, m] = iso.split('-').map(Number); return 
 function HistoryScreen({ data, nav }) {
   const [tab, setTab] = useState(() => { try { return sessionStorage.getItem('histTab') || 'exercises'; } catch { return 'exercises'; } });
   const pick = (t) => { setTab(t); try { sessionStorage.setItem('histTab', t); } catch { /* ignore */ } };
-  const sessions = E.sortedSessions(data).filter(E.sessionHasContent).reverse();
-  const withHistory = data.exercises
-    .map((ex) => {
-      const last = sessions.find((s) => E.setsFor(s, ex.id).length);
-      return last ? { ex, last, pr: E.personalRecord(data, ex.id) } : null;
-    })
-    .filter(Boolean)
-    .sort((a, b) => a.ex.name.localeCompare(b.ex.name));
-
-  let month = null;
+  const today = St.todayStr();
+  const tabs = [['exercises', 'Exercises'], ['sessions', 'Sessions'], ['muscles', 'Muscles']];
   return html`
     <${TopBar} title="History" nav=${nav} large />
     <div class="tabs-inline" role="tablist">
-      <button role="tab" aria-selected=${tab === 'exercises'} class=${tab === 'exercises' ? 'on' : ''} onClick=${() => pick('exercises')}>Exercises</button>
-      <button role="tab" aria-selected=${tab === 'sessions'} class=${tab === 'sessions' ? 'on' : ''} onClick=${() => pick('sessions')}>Sessions</button>
+      ${tabs.map(([k, l]) => html`<button role="tab" aria-selected=${tab === k} class=${tab === k ? 'on' : ''} onClick=${() => pick(k)}>${l}</button>`)}
     </div>
-    ${tab === 'exercises' ? html`<div class="list" style="border-top:0">
-      ${withHistory.map(({ ex, last, pr }) => html`<button class="li" onClick=${() => nav.go({ tab: 'history', view: 'exercise', id: ex.id })}>
-        <span class="li-main"><div class="li-title">${ex.name}</div><div class="li-sub">Last ${fmtDate(last.date)}</div></span>
-        ${pr && html`<span class="li-aside"><div class="v">${pr.label}</div><div class="k">${pr.kind}</div></span>`}
+    ${tab === 'exercises' && html`<${ProgressList} data=${data} nav=${nav} today=${today} />`}
+    ${tab === 'sessions' && html`<${SessionsTab} data=${data} nav=${nav} today=${today} />`}
+    ${tab === 'muscles' && html`<${MusclesTab} data=${data} today=${today} />`}
+  `;
+}
+
+/** Exercises with history: trend line, where each one stands, change over 4 weeks, stalls first. */
+function ProgressList({ data, nav, today }) {
+  const rows = I.progressOverview(data, today);
+  if (!rows.length) return html`<p class="empty">Exercises appear here after you log your first set.</p>`;
+  const stalled = rows.filter((r) => r.stalled).length;
+  return html`
+    <p class="sec-note" style="margin-top:12px">${stalled
+      ? `${stalled} exercise${stalled === 1 ? ' hasn’t' : 's haven’t'} progressed in the last three sessions. Change shown over the last 4 weeks.`
+      : 'Change shown over the last 4 weeks. One step is one rep, or one move up the ladder.'}</p>
+    <div class="list">
+      ${rows.map((r) => html`<button class="li prog" onClick=${() => nav.go({ tab: 'history', view: 'exercise', id: r.ex.id })}>
+        <span class="li-main"><div class="li-title">${r.ex.name}</div><div class="li-sub num">${r.now}</div></span>
+        <span class="prog-aside">
+          <${Sparkline} values=${r.spark} />
+          <span class=${`prog-delta ${r.stalled ? 'warn-text' : r.delta > 0 ? 'up' : ''}`}>${r.stalled ? 'Stalled' : r.deltaText || 'New'}</span>
+        </span>
         ${Icon.chev()}</button>`)}
-    </div>
-    ${withHistory.length === 0 && html`<p class="empty">Exercises appear here after you log your first set.</p>`}`
-    : html`<div>
+    </div>`;
+}
+
+function Sparkline({ values, w = 72, h = 24 }) {
+  if (!values || values.length < 2) return html`<span style=${`width:${w}px;display:inline-block`}></span>`;
+  const lo = Math.min(...values); const hi = Math.max(...values);
+  const sy = (v) => (hi === lo ? h / 2 : 3 + (1 - (v - lo) / (hi - lo)) * (h - 6));
+  const sx = (i) => 2 + (i / (values.length - 1)) * (w - 4);
+  const d = values.map((v, i) => `${i ? 'L' : 'M'}${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(' ');
+  const last = values.length - 1;
+  return html`<svg class="spark" width=${w} height=${h} viewBox=${`0 0 ${w} ${h}`} aria-hidden="true">
+    <path d=${d} /><circle cx=${sx(last)} cy=${sy(values[last])} r="2.5" /></svg>`;
+}
+
+function SessionsTab({ data, nav, today }) {
+  const sessions = E.sortedSessions(data).filter(E.sessionHasContent).reverse();
+  let month = null;
+  return html`
+    ${sessions.length > 0 && html`<${ConsistencyStrip} data=${data} today=${today} />`}
+    <div>
       ${sessions.map((s) => {
         const n = s.entries.filter((e) => e.sets.length).length;
         const m = monthLabel(s.date);
@@ -578,8 +605,61 @@ function HistoryScreen({ data, nav }) {
           ${Icon.chev()}</button>`;
       })}
       ${sessions.length === 0 && html`<p class="empty">Finished workouts appear here.</p>`}
-    </div>`}
-  `;
+    </div>`;
+}
+
+/** Last 12 weeks, newest on top: one box per workout in the rotation. */
+function ConsistencyStrip({ data, today }) {
+  const c = I.weeklyConsistency(data, today, 12);
+  if (!c.workouts.length) return null;
+  const total = c.weeks.reduce((a, w) => a + w.sessions, 0);
+  const first = c.weeks.reduce((i, w, k) => (w.sessions ? k : i), -1); // oldest week with anything
+  const span = first + 1;
+  const avg = span ? Math.round((total / span) * 10) / 10 : 0;
+  const short = (iso) => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }); };
+  return html`<section class="sec" style="margin-top:16px">
+    <div class="sec-head"><h2>Weekly</h2><span class="meta num">${total} workouts, ${E.fmtNum(avg)} a week</span></div>
+    <div class="weeks" role="table" aria-label="Workouts per week, last 12 weeks">
+      <div class="wk wk-head" role="row"><span class="wk-label"></span>
+        ${c.workouts.map((w) => html`<span class=${`wk-cell head ${w.optional ? 'opt' : ''}`} title=${w.name}>${w.code}</span>`)}<span class="wk-extra"></span></div>
+      ${c.weeks.map((w, i) => html`<div class="wk" role="row">
+        <span class="wk-label">${i === 0 ? 'This week' : short(w.start)}</span>
+        ${c.workouts.map((wo) => {
+          const st = w.slots[wo.id];
+          return html`<span class=${`wk-cell ${st || ''} ${wo.optional ? 'opt' : ''}`} role="cell"
+            aria-label=${`${wo.name}: ${st === 'done' ? 'done' : st === 'deload' ? 'deload' : 'not done'}`}></span>`;
+        })}
+        <span class="wk-extra meta num">${w.unplanned ? `+${w.unplanned}` : ''}</span>
+      </div>`)}
+    </div>
+    <div class="legend meta"><span><i class="wk-cell done"></i> Done</span><span><i class="wk-cell deload"></i> Deload</span>
+      ${c.workouts.some((w) => w.optional) && html`<span><i class="wk-cell opt"></i> Optional</span>`}<span>+1 unplanned</span></div>
+  </section>`;
+}
+
+/** Sets per muscle: bar = this week, tick = average of the previous 4 weeks. */
+function MusclesTab({ data, today }) {
+  const m = I.setsPerMuscle(data, today);
+  if (!m.anyMuscles && !m.rows.length) {
+    return html`<p class="empty">Add muscles to your exercises (Program → exercise → Muscles) to see sets per muscle.</p>`;
+  }
+  const rows = [...m.rows].sort((a, b) => (b.average - a.average) || (b.thisWeek - a.thisWeek) || a.muscle.localeCompare(b.muscle));
+  const max = Math.max(1, ...rows.map((r) => Math.max(r.thisWeek, r.average)));
+  return html`<section class="sec" style="margin-top:16px">
+    <div class="sec-head"><h2>Sets per muscle</h2><span class="meta">this week</span></div>
+    <p class="sec-note">Each set counts for every muscle listed on its exercise. The mark shows your average over the previous 4 weeks.</p>
+    <div class="mbars">
+      ${rows.map((r) => html`<div class="mbar" aria-label=${`${r.muscle}: ${r.thisWeek} sets this week, ${r.average} on average`}>
+        <span class="mbar-name">${r.muscle}</span>
+        <span class="mbar-track">
+          <span class="mbar-fill" style=${`width:${(r.thisWeek / max) * 100}%`}></span>
+          ${r.average > 0 && html`<span class="mbar-avg" style=${`left:${(r.average / max) * 100}%`}></span>`}
+        </span>
+        <span class="mbar-val num">${r.thisWeek}<span class="muted"> / ${E.fmtNum(r.average)}</span></span>
+      </div>`)}
+    </div>
+    <div class="legend meta"><span><i class="lg-bar"></i> This week</span><span><i class="lg-tick"></i> 4-week average</span></div>
+  </section>`;
 }
 
 function ExerciseHistory({ data, nav, id }) {
@@ -588,6 +668,7 @@ function ExerciseHistory({ data, nav, id }) {
   if (!ex) return html`<${TopBar} title="Exercise" nav=${nav} back /><p class="empty">This exercise no longer exists.</p>`;
   const pr = E.personalRecord(data, id);
   const series = E.chartSeries(data, id);
+  const ladder = I.ladderSeries(data, id);
   const rows = E.sortedSessions(data).filter((s) => E.setsFor(s, id).length).reverse();
   return html`
     <${TopBar} title=${ex.name} nav=${nav} back />
@@ -600,7 +681,10 @@ function ExerciseHistory({ data, nav, id }) {
       ${pr && html`<div class="stat"><div class="k">${pr.kind}</div><div class="v">${pr.label}</div><div class="s">${fmtDate(pr.date)}</div></div>`}
       <div class="stat"><div class="k">Sessions</div><div class="v">${rows.length}</div><div class="s">${rows.length ? `since ${fmtDate(rows[rows.length - 1].date)}` : ''}</div></div>
     </div>
-    ${series.points.length > 1 && html`<section class="sec">
+    ${ladder && ladder.points.length > 1 ? html`<section class="sec">
+      <div class="sec-head"><h2>Progress</h2><span class="meta">${ladder.unit === 's' ? 'shortest hold' : 'weakest set'} per session</span></div>
+      <${LadderChart} series=${ladder} />
+    </section>` : series.points.length > 1 && html`<section class="sec">
       <div class="sec-head"><h2>${series.title}</h2><span class="meta">per session</span></div>
       <${LineChart} points=${series.points} unit=${series.unit} bands=${ex.type === 'band' ? data.bands : null} />
     </section>`}
@@ -612,6 +696,65 @@ function ExerciseHistory({ data, nav, id }) {
           <td class="sets">${E.summarizeSets(ex, E.setsFor(s, id))}${s.deload ? html` <span class="tag-deload">deload</span>` : ''}</td></tr>`)}
       </tbody></table>
     </section>`;
+}
+
+/**
+ * Weakest set per session. Shaded columns = sessions with the modifier; dashed rules = load changes.
+ * Lines connect sessions on the same stage, so each climb reads as its own segment.
+ */
+function LadderChart({ series }) {
+  const { ex, points, markers, range, unit } = series;
+  const [sel, setSel] = useState(points.length - 1);
+  const W = 343; const H = 188; const L = 28; const R = 10; const T = 24; const B = 22;
+  const n = points.length;
+  const vals = points.map((p) => p.value);
+  let y0; let y1;
+  if (range) { y0 = Math.min(range[0], ...vals) - (unit === 's' ? 5 : 1); y1 = Math.max(range[1], ...vals) + (unit === 's' ? 5 : 1); }
+  else { y0 = Math.min(...vals) - 5; y1 = Math.max(...vals) + 5; }
+  const step = n > 1 ? (W - L - R) / (n - 1) : 0;
+  const sx = (i) => (n > 1 ? L + i * step : (L + W - R) / 2);
+  const sy = (v) => T + (1 - (v - y0) / (y1 - y0)) * (H - T - B);
+  const half = n > 1 ? step / 2 : 12;
+  const ticks = range ? [range[0], range[1]] : [Math.round(y0 + 5), Math.round(y1 - 5)];
+  // segments: consecutive regular sessions with the same load and modifier
+  const segs = []; let cur = [];
+  points.forEach((p, i) => {
+    if (p.deload) return;
+    const prev = cur.length ? points[cur[cur.length - 1]] : null;
+    if (prev && (prev.load !== p.load || prev.modifier !== p.modifier)) { segs.push(cur); cur = []; }
+    cur.push(i);
+  });
+  if (cur.length) segs.push(cur);
+  const short = (iso) => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }); };
+  const onPointer = (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * W;
+    setSel(Math.max(0, Math.min(n - 1, Math.round(n > 1 ? (px - L) / step : 0))));
+  };
+  const p = points[sel];
+  const mod = ex.modifierName || 'Pause';
+  return html`<div>
+    <svg class="chart ladder-chart" viewBox=${`0 0 ${W} ${H}`} role="img"
+      aria-label=${`${ex.name}: ${unit === 's' ? 'shortest hold' : 'weakest set'} over ${n} sessions`}
+      onPointerDown=${onPointer} onPointerMove=${(e) => e.buttons && onPointer(e)}>
+      ${points.map((pt, i) => pt.modifier && !pt.deload && html`<rect class="band" x=${sx(i) - half} y=${T} width=${half * 2} height=${H - T - B} />`)}
+      ${ticks.map((t) => html`<line class="grid" x1=${L} x2=${W - R} y1=${sy(t)} y2=${sy(t)} />
+        <text class="axis" x=${L - 6} y=${sy(t) + 4} text-anchor="end">${t}</text>`)}
+      ${markers.map((m) => html`<line class="marker" x1=${sx(m.index) - half} x2=${sx(m.index) - half} y1=${T - 2} y2=${H - B} />
+        <text class="marker-label" x=${Math.min(Math.max(sx(m.index) - half, L + 16), W - R - 16)} y=${T - 8} text-anchor="middle">${m.label}</text>`)}
+      ${segs.map((sg) => sg.length > 1 && html`<path class="line" d=${sg.map((i, k) => `${k ? 'L' : 'M'}${sx(i).toFixed(1)},${sy(points[i].value).toFixed(1)}`).join(' ')} />`)}
+      <line class="cross" x1=${sx(sel)} x2=${sx(sel)} y1=${T} y2=${H - B} />
+      ${points.map((pt, i) => html`<circle class=${`pt ${pt.deload ? 'deload' : ''}`} cx=${sx(i)} cy=${sy(pt.value)} r=${sel === i ? 5.5 : 4} />`)}
+      <text class="axis" x=${L} y=${H - 4}>${short(points[0].date)}</text>
+      <text class="axis" x=${W - R} y=${H - 4} text-anchor="end">${short(points[n - 1].date)}</text>
+    </svg>
+    <p class="chart-readout"><span class="num">${fmtDate(p.date)}</span>: <span class="num">${E.summarizeSets(ex, p.sets)}</span>${p.deload ? ' (deload)' : ''}</p>
+    <div class="legend meta">
+      ${ex.ladder === 'modifier' && html`<span><i class="lg-band"></i> ${mod}</span>`}
+      ${(ex.type === 'weighted' || ex.type === 'band') && html`<span><i class="lg-marker"></i> ${ex.type === 'band' ? 'Band change' : 'Weight change'}</span>`}
+      <span><i class="lg-hollow"></i> Deload</span>
+    </div>
+  </div>`;
 }
 
 function LineChart({ points, unit, bands }) {

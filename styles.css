@@ -20,6 +20,7 @@
   --accent-weak: #e9ecf7;
   --warn: #9a5b00;
   --danger: #b3261e;
+  --warn-weak: #f3e3c8;
   --sheet-shadow: 0 -8px 32px rgba(0, 0, 0, .14);
 
   --f-ui: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -36,7 +37,7 @@
   --bg: #141516; --fill: #1f2123; --line: #2c2f32; --line-strong: #45494d;
   --ink: #ececea; --ink-2: #b0b1ad; --ink-3: #7d7f7b;
   --accent: #9fb0ff; --accent-press: #c3cdff; --accent-ink: #10173a; --accent-weak: #222a4a;
-  --warn: #e8b057; --danger: #f2867e; --sheet-shadow: 0 -8px 32px rgba(0, 0, 0, .5);
+  --warn: #e8b057; --warn-weak: #3d3020; --danger: #f2867e; --sheet-shadow: 0 -8px 32px rgba(0, 0, 0, .5);
   color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) {
@@ -44,7 +45,7 @@
     --bg: #141516; --fill: #1f2123; --line: #2c2f32; --line-strong: #45494d;
     --ink: #ececea; --ink-2: #b0b1ad; --ink-3: #7d7f7b;
     --accent: #9fb0ff; --accent-press: #c3cdff; --accent-ink: #10173a; --accent-weak: #222a4a;
-    --warn: #e8b057; --danger: #f2867e; --sheet-shadow: 0 -8px 32px rgba(0, 0, 0, .5);
+    --warn: #e8b057; --warn-weak: #3d3020; --danger: #f2867e; --sheet-shadow: 0 -8px 32px rgba(0, 0, 0, .5);
     color-scheme: dark;
   }
 }
@@ -379,3 +380,46 @@ button.thumb:active { opacity: .7; }
 .info-frames .on { color: var(--ink); }
 .info-row { display: flex; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); border-top: 1px solid var(--line); margin-top: 8px; }
 .info-row .k { width: 72px; flex: none; color: var(--ink-3); font-size: 14px; font-weight: 500; padding-top: 1px; }
+
+/* ---------- progress list ---------- */
+.prog-aside { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: none; }
+.prog-delta { font-size: 13px; font-weight: 600; color: var(--ink-3); }
+.prog-delta.up { color: var(--ink-2); }
+.spark path { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+.spark circle { fill: var(--accent); }
+
+/* ---------- weekly strip ---------- */
+.weeks { border-top: 1px solid var(--line); padding-top: 6px; }
+.wk { display: flex; align-items: center; gap: 6px; min-height: 28px; }
+.wk-label { width: 84px; flex: none; font-size: 13px; color: var(--ink-2); }
+.wk-head .wk-cell.head { border: 0; background: none; font: 600 13px var(--f-num); color: var(--ink-3); display: grid; place-items: center; }
+.wk-cell { width: 26px; height: 20px; flex: none; border-radius: 4px; border: 1.5px solid var(--line); display: inline-block; }
+.wk-cell.opt { border-style: dashed; }
+.wk-cell.done { background: var(--accent); border-color: var(--accent); }
+.wk-cell.deload { background: var(--warn-weak); border-color: var(--warn); }
+.wk-extra { width: 28px; flex: none; text-align: left; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 10px; align-items: center; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend .wk-cell { width: 14px; height: 12px; border-radius: 3px; }
+.legend i { font-style: normal; }
+
+/* ---------- muscle bars ---------- */
+.mbars { border-top: 1px solid var(--line); padding-top: 4px; }
+.mbar { display: flex; align-items: center; gap: 10px; min-height: 34px; }
+.mbar-name { width: 92px; flex: none; font-size: 14px; }
+.mbar-track { position: relative; flex: 1; height: 12px; }
+.mbar-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); border-radius: 0 3px 3px 0; min-width: 2px; }
+.mbar-avg { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--ink); }
+.mbar-val { width: 64px; flex: none; text-align: right; font-weight: 600; font-size: 15px; white-space: nowrap; }
+.mbar-val .muted { font-weight: 500; font-size: 13px; }
+.lg-bar { display: inline-block; width: 14px; height: 10px; background: var(--accent); border-radius: 0 2px 2px 0; }
+.lg-tick { display: inline-block; width: 2px; height: 14px; background: var(--ink); }
+
+/* ---------- ladder chart ---------- */
+.ladder-chart .band { fill: var(--accent-weak); }
+.ladder-chart .marker { stroke: var(--ink-2); stroke-width: 1; stroke-dasharray: 3 3; }
+.ladder-chart .marker-label { fill: var(--ink-2); font: 600 11px var(--f-ui); }
+.chart-readout { font-size: 14px; color: var(--ink-2); margin-top: 6px; }
+.lg-band { display: inline-block; width: 14px; height: 12px; background: var(--accent-weak); border-radius: 2px; }
+.lg-marker { display: inline-block; width: 0; height: 14px; border-left: 1px dashed var(--ink-2); }
+.lg-hollow { display: inline-block; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--accent); }

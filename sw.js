@@ -1,9 +1,9 @@
 // Offline cache for the app shell. Bump VERSION on every release.
-const VERSION = 'tt-v2.2.0';
+const VERSION = 'tt-v2.3.0';
 const MEDIA = 'tt-media'; // photos rarely change, so this cache survives releases
 const FILES = [
   './', './index.html', './styles.css', './manifest.webmanifest',
-  './src/app.js', './src/engine.js', './src/store.js', './vendor/preact-htm.js',
+  './src/app.js', './src/engine.js', './src/store.js', './src/insights.js', './vendor/preact-htm.js',
   './fonts/barlow-latin-400-normal.woff2', './fonts/barlow-latin-500-normal.woff2', './fonts/barlow-latin-600-normal.woff2',
   './fonts/barlow-semi-condensed-latin-500-normal.woff2', './fonts/barlow-semi-condensed-latin-600-normal.woff2',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png',
