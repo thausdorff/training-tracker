@@ -387,3 +387,54 @@ test('ladderInfo: cardio and plain holds', () => {
   assert.equal(ladderInfo(d.exercises[5], { minutes: 27 }, d).text, '27/40 min → then distance');
   assert.equal(ladderInfo(d.exercises[4], { seconds: 40 }, d), null);
 });
+
+// ---- optional workout & weeks ----
+import { nextWorkoutInfo, weekStart } from '../src/engine.js';
+function weekly(sessions, opts = {}) {
+  const d = mk({ sessions });
+  d.workouts.push({ id: 'D', name: 'D', items: [], optional: true });
+  Object.assign(d.settings, opts);
+  return d;
+}
+const at = (date, wid) => ({ ...sess(1, [w('bench', S(20, 10))], { workoutId: wid }), date, startedAt: `${date}T08:00:00Z` });
+// 2026-10-18 is a Sunday
+test('weekStart: Sunday-based by default, Monday optional', () => {
+  assert.equal(weekStart('2026-10-17'), '2026-10-11'); // Saturday → previous Sunday
+  assert.equal(weekStart('2026-10-18'), '2026-10-18');
+  assert.equal(weekStart('2026-10-18', 1), '2026-10-12');
+});
+test('optional D offered after C in the same week, with A as fallback', () => {
+  const d = weekly([at('2026-10-18', 'A'), at('2026-10-20', 'B'), at('2026-10-22', 'C')]);
+  const n = nextWorkoutInfo(d, '2026-10-23');
+  assert.equal(n.workout.id, 'D'); assert.equal(n.optional, true); assert.equal(n.fallback.id, 'A');
+});
+test('new week skips optional D → A', () => {
+  const d = weekly([at('2026-10-18', 'A'), at('2026-10-20', 'B'), at('2026-10-22', 'C')]);
+  const n = nextWorkoutInfo(d, '2026-10-25');
+  assert.equal(n.workout.id, 'A'); assert.equal(n.optional, false);
+});
+test('after doing D → A', () => {
+  const d = weekly([at('2026-10-22', 'C'), at('2026-10-23', 'D')]);
+  assert.equal(nextWorkoutInfo(d, '2026-10-23').workout.id, 'A');
+});
+test('missed mandatory C carries into next week', () => {
+  const d = weekly([at('2026-10-18', 'A'), at('2026-10-20', 'B')]);
+  assert.equal(nextWorkoutInfo(d, '2026-10-26').workout.id, 'C');
+});
+test('optional workout in the middle is skipped across weeks', () => {
+  const d = mk({ sessions: [at('2026-10-20', 'A')] });
+  d.workouts = [{ id: 'A', items: [] }, { id: 'X', items: [], optional: true }, { id: 'B', items: [] }];
+  assert.equal(nextWorkoutInfo(d, '2026-10-21').workout.id, 'X');
+  assert.equal(nextWorkoutInfo(d, '2026-10-21').fallback.id, 'B');
+  assert.equal(nextWorkoutInfo(d, '2026-10-25').workout.id, 'B');
+});
+test('nothing logged: first mandatory workout', () => {
+  const d = mk(); d.workouts = [{ id: 'D', items: [], optional: true }, { id: 'A', items: [] }];
+  assert.equal(nextWorkoutInfo(d, '2026-10-20').workout.id, 'A');
+});
+test('Monday week start setting', () => {
+  // C on Saturday 2026-10-24; Sunday 25 is still the same Monday-week
+  const d = weekly([at('2026-10-24', 'C')], { weekStartsOn: 1 });
+  assert.equal(nextWorkoutInfo(d, '2026-10-25').workout.id, 'D');
+  assert.equal(nextWorkoutInfo(d, '2026-10-26').workout.id, 'A');
+});

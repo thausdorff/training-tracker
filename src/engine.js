@@ -62,16 +62,54 @@ function history(data, beforeSession) {
 
 // ---------- rotation ----------
 
-export function nextWorkout(data) {
+/** Start of the week (YYYY-MM-DD) containing `dateStr`; weekStartsOn 0 = Sunday, 1 = Monday. */
+export function weekStart(dateStr, weekStartsOn = 0) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  const back = (dt.getUTCDay() - weekStartsOn + 7) % 7;
+  dt.setUTCDate(dt.getUTCDate() - back);
+  return dt.toISOString().slice(0, 10);
+}
+
+/**
+ * What to train next.
+ * Workouts run in rotation order. A workout marked `optional` is offered only in the same week
+ * as the last planned session; once a new week starts it is skipped. A missed mandatory workout
+ * is never skipped (A, B done, week over → C next).
+ * Returns { workout, optional, fallback } — `fallback` is the next mandatory workout when the
+ * suggestion is optional, so the UI can say what comes after.
+ */
+export function nextWorkoutInfo(data, today) {
   const workouts = data.workouts || [];
   if (workouts.length === 0) return null;
+  const ws = (data.settings && data.settings.weekStartsOn) || 0;
   const sessions = sortedSessions(data).filter(
     (s) => s.workoutId && sessionHasContent(s) && workouts.some((w) => w.id === s.workoutId),
   );
-  if (sessions.length === 0) return workouts[0];
+  const firstMandatory = (from) => {
+    for (let k = 0; k < workouts.length; k++) {
+      const w = workouts[(from + k) % workouts.length];
+      if (!w.optional) return w;
+    }
+    return workouts[from % workouts.length];
+  };
+  if (sessions.length === 0) {
+    const w = firstMandatory(0);
+    return { workout: w, optional: false, fallback: null };
+  }
   const last = sessions[sessions.length - 1];
   const idx = workouts.findIndex((w) => w.id === last.workoutId);
-  return workouts[(idx + 1) % workouts.length];
+  const cand = workouts[(idx + 1) % workouts.length];
+  if (!cand.optional) return { workout: cand, optional: false, fallback: null };
+  const sameWeek = today ? weekStart(last.date, ws) === weekStart(today, ws) : true;
+  const after = firstMandatory((idx + 1) % workouts.length);
+  if (sameWeek && after !== cand) return { workout: cand, optional: true, fallback: after };
+  return { workout: after, optional: false, fallback: null };
+}
+
+export function nextWorkout(data, today) {
+  const info = nextWorkoutInfo(data, today);
+  return info ? info.workout : null;
 }
 
 // ---------- loads ----------
@@ -372,7 +410,7 @@ export function emptyData() {
     warmup: [],
     workouts: [],
     sessions: [],
-    settings: { backupReminderDays: 7, lastExport: null },
+    settings: { backupReminderDays: 7, lastExport: null, weekStartsOn: 0 },
   };
 }
 

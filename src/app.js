@@ -2,7 +2,7 @@ import { html, render, useState, useEffect, useRef } from '../vendor/preact-htm.
 import * as E from './engine.js';
 import * as St from './store.js';
 
-export const APP_VERSION = '2.1.1';
+export const APP_VERSION = '2.2.0';
 
 // ---------- small helpers ----------
 const nowIso = () => new Date().toISOString();
@@ -187,7 +187,9 @@ function TodayScreen({ data, update, nav }) {
   const active = activeSession(data);
   if (active) return html`<${SessionView} key=${active.id} data=${data} update=${update} nav=${nav} session=${active} mode="active" />`;
 
-  const next = E.nextWorkout(data);
+  const info = E.nextWorkoutInfo(data, St.todayStr());
+  const next = info && info.workout;
+  const weekDay = (data.settings || {}).weekStartsOn === 1 ? 'Monday' : 'Sunday';
   const done = E.sortedSessions(data).filter((s) => E.sessionHasContent(s));
   const lastSession = done[done.length - 1];
   const settings = data.settings || {};
@@ -209,7 +211,9 @@ function TodayScreen({ data, update, nav }) {
       <button class="link sm" onClick=${() => nav.go({ tab: 'today', view: 'session', id: lastSession.id })}>View</button></div>`}
     ${next ? html`
       <h2 class="next-name">${next.name}</h2>
-      <p class="next-sub">Next in your rotation${lastOfNext ? `, last done ${fmtDate(lastOfNext.date)}` : ''}</p>
+      <p class="next-sub">${info.optional
+        ? `Optional this week. If you skip it, ${info.fallback.name} is next on ${weekDay}.`
+        : `Next in your rotation${lastOfNext ? `, last done ${fmtDate(lastOfNext.date)}` : ''}`}</p>
       <div class="plan">${items.map((it) => {
         const ex = exById(data, it.exerciseId);
         const t = E.targetFor(data, ex.id);
@@ -712,7 +716,7 @@ function ProgramScreen({ data, update, nav }) {
         ${data.workouts.map((w, i) => {
           const n = w.items.filter((it) => exById(data, it.exerciseId)).length;
           const body = html`<span class="li-lead num" style="font-size:18px;font-weight:600">${i + 1}</span>
-            <span class="li-main"><div class="li-title">${w.name}</div><div class="li-sub">${n} exercise${n === 1 ? '' : 's'}</div></span>`;
+            <span class="li-main"><div class="li-title">${w.name}</div><div class="li-sub">${n} exercise${n === 1 ? '' : 's'}${w.optional ? ', optional' : ''}</div></span>`;
           return editing === 'rotation'
             ? html`<div class="li">${body}<${ReorderButtons} i=${i} n=${data.workouts.length} onMove=${(k, dir) => update((d) => move(d.workouts, k, dir))} /></div>`
             : html`<button class="li" onClick=${() => nav.go({ tab: 'program', view: 'workout', id: w.id })}>${body}${Icon.chev()}</button>`;
@@ -773,6 +777,8 @@ function WorkoutEditor({ data, update, nav, id }) {
     <${TopBar} title=${w.name} nav=${nav} back />
     <label class="field" style="padding-top:16px"><span class="lbl">Name</span>
       <input type="text" value=${w.name} onChange=${(e) => e.target.value.trim() && mutW((x) => { x.name = e.target.value.trim(); })} /></label>
+    <div class="field inline"><span class="lbl">Optional<small>Offered only in the same week as the workout before it. When a new week starts, it’s skipped.</small></span>
+      <${Switch} label="Optional" on=${!!w.optional} onChange=${(v) => mutW((x) => { x.optional = v; })} /></div>
     <section class="sec">
       <div class="sec-head"><h2>Exercises</h2>${w.items.length > 0 && html`<${EditToggle} editing=${editing} onToggle=${() => setEditing(!editing)} />`}</div>
       <p class="sec-note">In the order you do them. Link an exercise to the next one to alternate their sets.</p>
@@ -1010,6 +1016,10 @@ function DataScreen({ data, update, replaceAll, nav }) {
           ${[['light', 'Light'], ['dark', 'Dark'], ['system', 'Match phone']].map(([k, l]) => html`
             <button class=${(data.settings.theme || 'light') === k ? 'on' : ''} onClick=${() => update((d) => { d.settings.theme = k; })}>${l}</button>`)}
         </div></div>
+        <div class="field"><span class="lbl">Week starts on</span><div class="seg">
+          ${[[0, 'Sunday'], [1, 'Monday']].map(([k, l]) => html`
+            <button class=${((data.settings.weekStartsOn || 0) === k) ? 'on' : ''} onClick=${() => update((d) => { d.settings.weekStartsOn = k; })}>${l}</button>`)}
+        </div><span class="hint">Used to drop optional workouts when a new week begins.</span></div>
         <label class="field inline"><span class="lbl">Backup reminder<small>Days without a backup before Today reminds you</small></span>
           <input type="number" inputmode="numeric" style="width:72px;text-align:center" value=${data.settings.backupReminderDays}
             onChange=${(e) => update((d) => { d.settings.backupReminderDays = Math.max(1, num(e.target.value) || 7); })} /></label>

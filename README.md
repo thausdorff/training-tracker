@@ -53,6 +53,9 @@ Suggestions are always recomputed from the logged history. None of this is store
   the rotation forward.
 - **Program change:** changing an exercise's rep range or ladder restarts it at the bottom
   of the new range, at the current weight.
+- **Optional workouts:** a workout marked Optional (e.g. a 4th day) is offered only in the same
+  week as the workout before it. When a new week starts (Sunday by default), it's skipped and the
+  rotation continues with the next regular workout. Missed regular workouts are never skipped.
 - **Rotation:** the next workout is the one after the last planned workout that had
   anything logged. This includes partial or abandoned sessions. Unplanned sessions don't
   move the rotation.
@@ -70,13 +73,13 @@ Suggestions are always recomputed from the logged history. None of this is store
                   "restartAt"? }],
   "bands": ["Yellow", "Red", "Black"],            // light → heavy
   "warmup": ["Arm circles", "..."],
-  "workouts": [{ "id", "name", "items": [{ "exerciseId", "sets", "supersetWithNext" }] }],
+  "workouts": [{ "id", "name", "optional"?, "items": [{ "exerciseId", "sets", "supersetWithNext" }] }],
   "sessions": [{ "id", "date": "YYYY-MM-DD", "startedAt", "finishedAt",
                  "workoutId"|null, "workoutName", "deload", "warmupDone": ["..."],
                  "entries": [{ "exerciseId", "plannedSets", "supersetWithNext",
                                "sets": [{ "weight"|"band", "reps", "modifier" }
                                         | { "seconds" } | { "minutes", "km" }] }] }],
-  "settings": { "backupReminderDays": 7, "lastExport": null }
+  "settings": { "backupReminderDays": 7, "lastExport": null, "weekStartsOn": 0 }
 }
 ```
 

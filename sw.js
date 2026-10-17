@@ -1,5 +1,5 @@
 // Offline cache for the app shell. Bump VERSION on every release.
-const VERSION = 'tt-v2.1.1';
+const VERSION = 'tt-v2.2.0';
 const MEDIA = 'tt-media'; // photos rarely change, so this cache survives releases
 const FILES = [
   './', './index.html', './styles.css', './manifest.webmanifest',
