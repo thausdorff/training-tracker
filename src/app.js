@@ -3,7 +3,7 @@ import * as E from './engine.js';
 import * as St from './store.js';
 import * as I from './insights.js';
 
-export const APP_VERSION = '2.3.0';
+export const APP_VERSION = '2.4.0';
 
 // ---------- small helpers ----------
 const nowIso = () => new Date().toISOString();
@@ -66,7 +66,26 @@ function cleanSet(ex, v) {
   const o = { reps: num(v.reps), modifier: !!v.modifier };
   if (ex.type === 'weighted') o.weight = num(v.weight);
   if (ex.type === 'band') o.band = v.band;
+  if (v.rir != null && v.rir !== '') o.rir = Number(v.rir);
   return o;
+}
+
+const isStrengthEx = (ex) => !!ex && ['weighted', 'band', 'bodyweight'].includes(ex.type);
+
+/** Set summary plus the last set's RIR when it was logged. */
+function setsSummary(ex, sets) {
+  const rir = E.lastSetRir(sets);
+  return `${E.summarizeSets(ex, sets)}${rir != null ? `, RIR ${E.rirLabel(rir)}` : ''}`;
+}
+
+/** One-tap reps-in-reserve picker for the last set. Tapping the selected value clears it. */
+function RirPicker({ value, target, onPick }) {
+  return html`<div class="rir" role="group" aria-label="Reps in reserve on the last set">
+    <span class="rir-label">Reps in reserve</span>
+    <div class="rir-opts">${E.RIR_OPTIONS.map((r) => html`<button class=${`${value === r ? 'on' : ''} ${target === r ? 'target' : ''}`}
+      aria-pressed=${value === r} aria-label=${`${E.rirLabel(r)} reps in reserve${target === r ? ' (target)' : ''}`}
+      onClick=${() => onPick(value === r ? null : r)}>${E.rirLabel(r)}</button>`)}</div>
+  </div>`;
 }
 
 
@@ -347,11 +366,13 @@ function EntryGroup({ data, session, idxs, current, collapsible, onExpand, open,
   const groupDone = rows.length > 0 && entries.every((e, k) => e.sets.length >= counts[k]);
   const nextRow = rows.findIndex(([k, r]) => r >= entries[k].sets.length);
   const editingHere = open != null && idxs.includes(Number(open.split(':')[0]));
-  if (groupDone && collapsible && !editingHere) {
+  const rirGiven = entries.every((e, k) => !isStrengthEx(exs[k]) || E.lastSetRir(e.sets) != null);
+  const movedOn = session.entries.slice(Math.max(...idxs) + 1).some((e) => e.sets.length > 0);
+  if (groupDone && collapsible && !editingHere && (rirGiven || movedOn)) {
     return html`<button class="done-group" onClick=${onExpand} aria-label=${`Show sets for ${exs.filter(Boolean).map((x) => x.name).join(' and ')}`}>
       ${entries.map((e, k) => exs[k] && html`<div class="done-row">
         <span class="check">${Icon.check()}</span><span class="name">${exs[k].name}</span>
-        <span class="sum">${E.summarizeSets(exs[k], e.sets)}</span></div>`)}
+        <span class="sum">${setsSummary(exs[k], e.sets)}</span></div>`)}
     </button>`;
   }
   return html`<section class="ex">
@@ -370,10 +391,10 @@ function EntryGroup({ data, session, idxs, current, collapsible, onExpand, open,
           }}>Remove</button>`}
         </div>
         ${ex.muscles && ex.muscles.length > 0 && html`<div class="muscles">${ex.muscles.join(', ')}</div>`}
-        <div class="target">${E.formatTarget(ex, t, e.plannedSets || counts[k] || 1)}${ex.perSide ? html`<span class="side">per side</span>` : ''}</div>
+        <div class="target">${E.formatTarget(ex, t, e.plannedSets || counts[k] || 1)}${(ex.perSide || (t && t.rir != null)) ? html`<span class="side">${[ex.perSide ? 'per side' : '', t && t.rir != null ? `RIR ${E.rirLabel(t.rir)}` : ''].filter(Boolean).join(', ')}</span>` : ''}</div>
         <${Ladder} info=${E.ladderInfo(ex, t, data)} />
         ${t && t.reason && html`<p class="why">${t.reason}</p>`}
-        ${basis && html`<p class="why last">Last time, ${fmtDate(basis.session.date)}: <span class="num">${E.summarizeSets(ex, basis.sets)}</span></p>`}
+        ${basis && html`<p class="why last">Last time, ${fmtDate(basis.session.date)}: <span class="num">${setsSummary(ex, basis.sets)}</span></p>`}
         </div>
         <${Thumb} ex=${ex} size=${64} onClick=${() => setInfo(ex.id)} />
       </div>`;
@@ -386,8 +407,10 @@ function EntryGroup({ data, session, idxs, current, collapsible, onExpand, open,
         const ex = exs[k];
         if (!ex) return null;
         const logged = r < e.sets.length;
-        const prefill = logged ? e.sets[r]
-          : (e.sets.length ? { ...e.sets[e.sets.length - 1] } : E.setFromTarget(ex, targets[k]));
+        const prev = e.sets.length ? { ...e.sets[e.sets.length - 1] } : null;
+        if (prev) delete prev.rir;
+        const prefill = logged ? e.sets[r] : (prev || E.setFromTarget(ex, targets[k]));
+        const showRir = logged && isStrengthEx(ex) && r === counts[k] - 1 && r === e.sets.length - 1;
         const key = `${ei}:${r}`;
         const label = isSuper ? `${LETTERS[k]}${r + 1}` : `${r + 1}`;
         return html`<${SetRow} key=${key} ex=${ex} data=${data} label=${label} values=${prefill} logged=${logged} next=${current && rowIdx === nextRow}
@@ -396,7 +419,8 @@ function EntryGroup({ data, session, idxs, current, collapsible, onExpand, open,
           onSave=${(v) => { mut((s) => { s.entries[ei].sets[r] = cleanSet(ex, v); }); setOpen(null); }}
           onDelete=${() => { mut((s) => { s.entries[ei].sets.splice(r, 1); }); setOpen(null); }}
           onDropRow=${() => { mut((s) => { const en = s.entries[ei]; en.plannedSets = Math.max(en.sets.length, (en.plannedSets || 0) - 1); }); setOpen(null); }}
-        />`;
+        />${showRir && open !== key && html`<${RirPicker} value=${e.sets[r].rir ?? null} target=${targets[k] && targets[k].rir}
+          onPick=${(v) => mut((s) => { const st = s.entries[ei].sets[r]; if (v == null) delete st.rir; else st.rir = v; })} />`}`;
       })}
     </div>
     <div class="ex-foot">
@@ -461,7 +485,7 @@ function SetRow({ ex, data, label, values, logged, next, isOpen, toggle, onLog, 
   return html`<div>
     <div class=${`set ${logged ? 'logged' : ''} ${next ? 'next' : ''}`}>
       <span class="idx">${label}</span>
-      <button class="val" aria-expanded=${isOpen ? 'true' : 'false'} onClick=${toggle}>${setText(ex, values)}${values.modifier ? html`<span class="mod">${ex.modifierName || 'Pause'}</span>` : null}</button>
+      <button class="val" aria-expanded=${isOpen ? 'true' : 'false'} onClick=${toggle}>${setText(ex, values)}${values.modifier ? html`<span class="mod">${ex.modifierName || 'Pause'}</span>` : null}${logged && values.rir != null ? html`<span class="mod">RIR ${E.rirLabel(values.rir)}</span>` : null}</button>
       <button class="tick" aria-label=${logged ? 'Logged, edit set' : 'Log set'} disabled=${!logged && !ok}
         onClick=${() => (logged ? toggle() : onLog(values))}>${Icon.check()}</button>
     </div>
@@ -489,6 +513,7 @@ function SetEditor({ ex, data, initial, logged, onSubmit, onDelete, onCancel }) 
     for (const k of ['weight', 'reps', 'seconds', 'minutes', 'km']) o[k] = initial[k] == null ? '' : String(initial[k]);
     o.band = initial.band || (data.bands[0] || '');
     o.modifier = !!initial.modifier;
+    o.rir = initial.rir ?? null;
     return o;
   });
   const set = (k) => (val) => setV({ ...v, [k]: val });
@@ -508,6 +533,9 @@ function SetEditor({ ex, data, initial, logged, onSubmit, onDelete, onCancel }) 
     ${(strength || ex.type === 'hold') && (ex.ladder === 'modifier' || v.modifier) && html`<div class="ed-row">
       <span class="spacer small" style="color:var(--ink-2)">${ex.modifierName || 'Pause'}</span>
       <${Switch} label=${ex.modifierName || 'Pause'} on=${v.modifier} onChange=${set('modifier')} /></div>`}
+    ${strength && html`<div class="ed-row"><span class="lbl">RIR</span>
+      <div class="rir-opts">${E.RIR_OPTIONS.map((r) => html`<button class=${v.rir === r ? 'on' : ''} aria-pressed=${v.rir === r}
+        aria-label=${`${E.rirLabel(r)} reps in reserve`} onClick=${() => set('rir')(v.rir === r ? null : r)}>${E.rirLabel(r)}</button>`)}</div></div>`}
     <div class="actions">
       <button class="link sm danger" onClick=${onDelete}>${logged ? 'Delete set' : 'Remove set'}</button>
       <span class="spacer"></span>
@@ -558,17 +586,20 @@ function HistoryScreen({ data, nav }) {
 function ProgressList({ data, nav, today }) {
   const rows = I.progressOverview(data, today);
   if (!rows.length) return html`<p class="empty">Exercises appear here after you log your first set.</p>`;
-  const stalled = rows.filter((r) => r.stalled).length;
+  const stalled = rows.filter((r) => r.stalled && !r.tooLight).length;
+  const light = rows.filter((r) => r.tooLight).length;
+  const notes = [];
+  if (light) notes.push(`${light} exercise${light === 1 ? '' : 's'} ended with 3+ reps in reserve two sessions in a row: the load is probably too light.`);
+  if (stalled) notes.push(`${stalled} exercise${stalled === 1 ? ' hasn’t' : 's haven’t'} progressed in the last three sessions.`);
   return html`
-    <p class="sec-note" style="margin-top:12px">${stalled
-      ? `${stalled} exercise${stalled === 1 ? ' hasn’t' : 's haven’t'} progressed in the last three sessions. Change shown over the last 4 weeks.`
+    <p class="sec-note" style="margin-top:12px">${notes.length ? `${notes.join(' ')} Change shown over the last 4 weeks.`
       : 'Change shown over the last 4 weeks. One step is one rep, or one move up the ladder.'}</p>
     <div class="list">
       ${rows.map((r) => html`<button class="li prog" onClick=${() => nav.go({ tab: 'history', view: 'exercise', id: r.ex.id })}>
         <span class="li-main"><div class="li-title">${r.ex.name}</div><div class="li-sub num">${r.now}</div></span>
         <span class="prog-aside">
           <${Sparkline} values=${r.spark} />
-          <span class=${`prog-delta ${r.stalled ? 'warn-text' : r.delta > 0 ? 'up' : ''}`}>${r.stalled ? 'Stalled' : r.deltaText || 'New'}</span>
+          <span class=${`prog-delta ${r.tooLight || r.stalled ? 'warn-text' : r.delta > 0 ? 'up' : ''}`}>${r.tooLight ? 'Too light' : r.stalled ? 'Stalled' : r.deltaText || 'New'}</span>
         </span>
         ${Icon.chev()}</button>`)}
     </div>`;
@@ -669,6 +700,8 @@ function ExerciseHistory({ data, nav, id }) {
   const pr = E.personalRecord(data, id);
   const series = E.chartSeries(data, id);
   const ladder = I.ladderSeries(data, id);
+  const e1rm = I.e1rmSeries(data, id);
+  const light = I.tooLight(data, id);
   const rows = E.sortedSessions(data).filter((s) => E.setsFor(s, id).length).reverse();
   return html`
     <${TopBar} title=${ex.name} nav=${nav} back />
@@ -677,6 +710,7 @@ function ExerciseHistory({ data, nav, id }) {
       <div><div class="meta">Muscles</div><div>${ex.muscles?.length ? ex.muscles.join(', ') : 'Not set'}</div></div>
     </div>` : null}
     ${info && html`<${ExerciseInfo} ex=${ex} onClose=${() => setInfo(false)} />`}
+    ${light && html`<div class="notice"><span class="dot"></span><span class="spacer">Your last two sessions ended with 3+ reps in reserve. The load is probably too light.</span></div>`}
     <div class="stats">
       ${pr && html`<div class="stat"><div class="k">${pr.kind}</div><div class="v">${pr.label}</div><div class="s">${fmtDate(pr.date)}</div></div>`}
       <div class="stat"><div class="k">Sessions</div><div class="v">${rows.length}</div><div class="s">${rows.length ? `since ${fmtDate(rows[rows.length - 1].date)}` : ''}</div></div>
@@ -688,12 +722,17 @@ function ExerciseHistory({ data, nav, id }) {
       <div class="sec-head"><h2>${series.title}</h2><span class="meta">per session</span></div>
       <${LineChart} points=${series.points} unit=${series.unit} bands=${ex.type === 'band' ? data.bands : null} />
     </section>`}
+    ${e1rm && e1rm.points.length > 1 && html`<section class="sec">
+      <div class="sec-head"><h2>Estimated 1-rep max</h2><span class="meta">kg</span></div>
+      <p class="sec-note">Weight × (1 + (reps + RIR) ÷ 30), best set per session. Sessions with ${(ex.modifierName || 'the modifier').toLowerCase()} and deloads are left out. Sets without RIR use your target (${E.rirLabel(Number(ex.targetRir ?? 2))}).</p>
+      <${LineChart} points=${e1rm.points} unit="kg" />
+    </section>`}
     <section class="sec">
       <div class="sec-head"><h2>Log</h2></div>
       <table class="log"><tbody>
         ${rows.map((s) => html`<tr onClick=${() => nav.go({ tab: 'history', view: 'session', id: s.id })}>
           <td class="date">${fmtDate(s.date)}</td>
-          <td class="sets">${E.summarizeSets(ex, E.setsFor(s, id))}${s.deload ? html` <span class="tag-deload">deload</span>` : ''}</td></tr>`)}
+          <td class="sets">${setsSummary(ex, E.setsFor(s, id))}${s.deload ? html` <span class="tag-deload">deload</span>` : ''}</td></tr>`)}
       </tbody></table>
     </section>`;
 }
@@ -1031,6 +1070,9 @@ function ExerciseEditor({ data, update, nav, id }) {
           <input type="text" value=${f.modifierName} onInput=${(e) => set('modifierName', e.target.value)} />
           <span class="hint">For example “2 s pause at bottom” or “3 s lowering”.</span></label>`}
         ${f.type === 'weighted' && numField('Weight step, kg', 'weightStep')}
+        <div class="field"><span class="lbl">Target reps in reserve</span><div class="seg">
+          ${E.RIR_OPTIONS.map((r) => html`<button class=${Number(f.targetRir ?? 2) === r ? 'on' : ''} onClick=${() => set('targetRir', r)}>${E.rirLabel(r)}</button>`)}
+        </div><span class="hint">How many reps you aim to leave in the tank on the last set. 3+ in reserve moves the load up next time; 0 below the range holds.</span></div>
       `}
       ${f.type === 'hold' && html`
         <div class="field"><span class="lbl">Range in seconds (optional)</span><div class="row">

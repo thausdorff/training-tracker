@@ -41,6 +41,13 @@ Suggestions are always recomputed from the logged history. None of this is store
   - *Reps → modifier → load*: first the modifier (e.g. Pause) goes on and reps reset to
     the bottom; after that, +load, reps reset to the bottom, and the modifier comes off.
   - Bodyweight exercises, and the heaviest band: reps keep climbing past the top.
+- **Reps in reserve (RIR):** after the last set of a strength exercise, tap 0 / 1 / 2 / 3 / 4+.
+  Each exercise has a target RIR (default 2). The last set's RIR adjusts the rules above:
+  - 3+ in reserve: add weight (+weight step, or the next band) and go back to the bottom of the
+    range, even mid-range or during the modifier stage.
+  - 0 in reserve below the range: hold the same weight and reps.
+  - Otherwise the normal +1 rep rule applies. Sessions without RIR use the normal rules.
+  - Two regular sessions in a row at 3+ in reserve flag the exercise as "Too light" in History.
 - **Timed holds:** the weakest hold + 5 s, up to an optional ceiling. With an optional range
   (e.g. 30–45 s) and a modifier, holds use the same ladder as reps: climb the range, add the
   modifier, climb again, then keep adding time.
@@ -68,7 +75,7 @@ Suggestions are always recomputed from the logged history. None of this is store
   "exercises": [{ "id", "name", "type": "weighted|band|bodyweight|hold|cardio",
                   "repRange": [8,12], "ladder": "simple|modifier", "modifierName",
                   "weightStep", "holdStep", "holdCeiling", "holdRange"?, "durationStep",
-                  "durationCeiling", "startMinutes"?, "perSide"?,
+                  "durationCeiling", "startMinutes"?, "perSide"?, "targetRir"?,
                   "muscles"?: ["Quads", "Glutes"], "images"?: [start, end], "imageSource"?,
                   "restartAt"? }],
   "bands": ["Yellow", "Red", "Black"],            // light → heavy
@@ -77,7 +84,7 @@ Suggestions are always recomputed from the logged history. None of this is store
   "sessions": [{ "id", "date": "YYYY-MM-DD", "startedAt", "finishedAt",
                  "workoutId"|null, "workoutName", "deload", "warmupDone": ["..."],
                  "entries": [{ "exerciseId", "plannedSets", "supersetWithNext",
-                               "sets": [{ "weight"|"band", "reps", "modifier" }
+                               "sets": [{ "weight"|"band", "reps", "modifier", "rir"? }
                                         | { "seconds" } | { "minutes", "km" }] }] }],
   "settings": { "backupReminderDays": 7, "lastExport": null, "weekStartsOn": 0 }
 }
@@ -98,6 +105,8 @@ Or edit the plan inside the app.
   dashed rule where the weight or band changed.
 - **Sessions:** a 12-week strip, one box per workout per week (done, deload, optional), above
   the session list.
+- **Estimated 1-rep max** (weighted exercises): weight × (1 + (reps + RIR) / 30), best set per
+  session; sessions with the modifier and deloads are left out.
 - **Muscles:** working sets per muscle this week, with the average of the previous 4 weeks.
 
 ## Design

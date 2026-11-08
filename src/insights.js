@@ -1,6 +1,6 @@
 // Derived statistics for the History screens. Pure functions over the data document.
 import {
-  sortedSessions, setsFor, EXERCISE_DEFAULTS, fmtNum, weekStart, sessionHasContent,
+  sortedSessions, setsFor, EXERCISE_DEFAULTS, fmtNum, weekStart, sessionHasContent, lastSetRir,
 } from './engine.js';
 
 const isStrength = (ex) => ['weighted', 'band', 'bodyweight'].includes(ex.type);
@@ -145,12 +145,12 @@ export function progressOverview(data, today, days = 28) {
       stalled = Math.max(b2.score, c.score) <= a.score;
     }
     rows.push({
-      ex, now, delta, deltaText, unit, stalled,
+      ex, now, delta, deltaText, unit, stalled, tooLight: tooLight(data, ex.id),
       spark: pts.slice(-12).map((p) => p.score),
       lastDate: pts[pts.length - 1].date,
     });
   }
-  return rows.sort((a, b) => (b.stalled - a.stalled) || a.ex.name.localeCompare(b.ex.name));
+  return rows.sort((a, b) => ((b.tooLight || b.stalled) - (a.tooLight || a.stalled)) || a.ex.name.localeCompare(b.ex.name));
 }
 
 /** Short label for a workout in the consistency strip: "A" from "A · Legs & Chest". */
@@ -222,4 +222,34 @@ export function setsPerMuscle(data, today, avgWeeks = 4) {
     average: Math.round(((prev[m] || 0) / avgWeeks) * 10) / 10,
   }));
   return { rows, anyMuscles, weekStart: thisWeek };
+}
+
+/** True when the last two regular sessions both ended with 3+ reps in reserve. */
+export function tooLight(data, exerciseId) {
+  const recent = sortedSessions(data).filter((s) => !s.deload && setsFor(s, exerciseId).length).slice(-2);
+  return recent.length === 2 && recent.every((s) => (lastSetRir(setsFor(s, exerciseId)) ?? -1) >= 3);
+}
+
+/**
+ * Estimated one-rep max per session for weighted exercises, using Epley with reps in reserve:
+ * weight × (1 + (reps + RIR) / 30). Sets without a logged RIR use the exercise's target RIR.
+ * Sessions done with the modifier (e.g. a pause) or as a deload are left out, so harder variants
+ * don't show up as fake drops.
+ */
+export function e1rmSeries(data, exerciseId) {
+  const ex = (data.exercises || []).find((e) => e.id === exerciseId);
+  if (!ex || ex.type !== 'weighted') return null;
+  const fallback = Number(ex.targetRir ?? EXERCISE_DEFAULTS.targetRir);
+  const points = [];
+  for (const s of sortedSessions(data)) {
+    if (s.deload) continue;
+    const sets = setsFor(s, exerciseId).filter((x) => !x.modifier && Number(x.weight) > 0 && Number(x.reps) > 0);
+    if (!sets.length) continue;
+    const best = Math.max(...sets.map((x) => {
+      const rir = x.rir != null && x.rir !== '' ? Number(x.rir) : fallback;
+      return Number(x.weight) * (1 + (Number(x.reps) + rir) / 30);
+    }));
+    points.push({ date: s.date, value: Math.round(best * 10) / 10, deload: false });
+  }
+  return { points, unit: 'kg', title: 'Estimated 1-rep max' };
 }

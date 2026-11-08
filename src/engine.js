@@ -15,7 +15,18 @@ export const EXERCISE_DEFAULTS = {
   holdCeiling: null,
   durationStep: 3,
   durationCeiling: 40,
+  targetRir: 2,
 };
+
+// Reps in reserve: 0, 1, 2, 3, or 4 meaning "4 or more".
+export const RIR_OPTIONS = [0, 1, 2, 3, 4];
+export const rirLabel = (r) => (r == null ? '' : r >= 4 ? '4+' : String(r));
+
+/** RIR of the last logged set (the one the selector asks about), or null. */
+export function lastSetRir(sets) {
+  const last = sets && sets.length ? sets[sets.length - 1] : null;
+  return last && last.rir != null && last.rir !== '' ? Number(last.rir) : null;
+}
 
 const round2 = (n) => Math.round(n * 100) / 100;
 export const fmtNum = (n) => (n == null ? '' : String(round2(n)));
@@ -188,6 +199,26 @@ function strengthTarget(ex, data, beforeSession) {
 
   const r = Number.isFinite(b.weakest) ? b.weakest : 0;
   const atTop = r >= hi;
+  const rir = lastSetRir(basis.sets);
+
+  // Effort rules (only when RIR was logged on the last set).
+  if (rir != null && rir >= 3) {
+    const why = `Last set had ${rirLabel(rir)} reps in reserve`;
+    if (ex.type === 'weighted') {
+      const step = Number(ex.weightStep ?? EXERCISE_DEFAULTS.weightStep);
+      return { ...base, weight: round2((b.weight ?? 0) + step), reps: lo, modifier: false, reason: `${why}: +${fmtNum(step)} kg, back to ${lo}` };
+    }
+    if (ex.type === 'band') {
+      const idx = bandIndex(data, b.band);
+      const bands = data.bands || [];
+      if (idx >= 0 && idx < bands.length - 1) {
+        return { ...base, band: bands[idx + 1], reps: lo, modifier: false, reason: `${why}: next band (${bands[idx + 1]}), back to ${lo}` };
+      }
+    }
+  }
+  if (rir === 0 && r < lo) {
+    return { ...base, reps: Math.max(1, r), modifier: b.modifier, reason: `Hold: last set was to failure below the range (${r})` };
+  }
 
   if (!atTop) {
     const reps = Math.max(1, r + 1);
@@ -280,7 +311,8 @@ export function targetFor(data, exerciseId, beforeSession = null) {
   if (!ex) return null;
   if (ex.type === 'cardio') return cardioTarget(ex, data, beforeSession);
   if (ex.type === 'hold') return holdTarget(ex, data, beforeSession);
-  return strengthTarget(ex, data, beforeSession);
+  const t = strengthTarget(ex, data, beforeSession);
+  return { ...t, rir: Number(ex.targetRir ?? EXERCISE_DEFAULTS.targetRir) };
 }
 
 /** Pre-filled set values from a target. */

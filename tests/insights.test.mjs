@@ -94,3 +94,21 @@ test('sets per muscle: this week and 4-week average, cardio excluded', () => {
   assert.equal(lats.average, 0.5); // 2 sets over 4 weeks
   assert.equal(m.rows.length, 2);
 });
+
+import { e1rmSeries, tooLight } from '../src/insights.js';
+test('e1RM: Epley with RIR, modifier and deload sessions left out', () => {
+  const d = data([
+    S('2026-09-01', [{ weight: 20, reps: 10, modifier: false, rir: 2 }]), // 20 × (1 + 12/30) = 28
+    S('2026-09-04', W(20, true, 12)), // pause: excluded
+    S('2026-09-08', W(10, false, 12), { deload: true }), // excluded
+    S('2026-09-11', [{ weight: 22, reps: 8, modifier: false }]), // no RIR → target 2: 22 × (1 + 10/30) = 29.3
+  ]);
+  assert.deepEqual(e1rmSeries(d, 'row').points.map((p) => p.value), [28, 29.3]);
+  assert.equal(e1rmSeries(d, 'run'), null);
+});
+test('too light: two regular sessions in a row ending at 3+ RIR', () => {
+  const hi = (date) => S(date, [{ weight: 20, reps: 10, modifier: false, rir: 3 }]);
+  assert.equal(tooLight(data([hi('2026-09-01'), hi('2026-09-04')]), 'row'), true);
+  assert.equal(tooLight(data([hi('2026-09-01'), S('2026-09-04', [{ weight: 22, reps: 8, modifier: false, rir: 2 }])]), 'row'), false);
+  assert.equal(tooLight(data([hi('2026-09-04')]), 'row'), false);
+});

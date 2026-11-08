@@ -438,3 +438,42 @@ test('Monday week start setting', () => {
   assert.equal(nextWorkoutInfo(d, '2026-10-25').workout.id, 'D');
   assert.equal(nextWorkoutInfo(d, '2026-10-26').workout.id, 'A');
 });
+
+// ---- RIR rules ----
+const R = (weight, rirLast, ...reps) => reps.map((r, i) => ({ weight, reps: r, modifier: false, ...(i === reps.length - 1 && rirLast != null ? { rir: rirLast } : {}) }));
+test('RIR 3+ on last set: add weight, back to bottom, even mid-range', () => {
+  const d = mk({ sessions: [sess(1, [w('bench', R(20, 3, 9, 9, 9))])] });
+  const t = targetFor(d, 'bench');
+  assert.equal(t.weight, 22); assert.equal(t.reps, 8); assert.equal(t.modifier, false);
+  assert.match(t.reason, /3 reps in reserve/);
+});
+test('RIR 4+ during the pause stage also adds weight (skips the rest of the pause stage)', () => {
+  const d = mk({ sessions: [sess(1, [w('row', [{ weight: 20, reps: 9, modifier: true }, { weight: 20, reps: 9, modifier: true, rir: 4 }])])] });
+  const t = targetFor(d, 'row');
+  assert.equal(t.weight, 22); assert.equal(t.modifier, false); assert.match(t.reason, /4\+ reps in reserve/);
+});
+test('RIR 3+ on a band exercise: next band', () => {
+  const d = mk({ sessions: [sess(1, [w('pull', [{ band: 'Yellow', reps: 13 }, { band: 'Yellow', reps: 13, rir: 3 }])])] });
+  assert.equal(targetFor(d, 'pull').band, 'Red');
+});
+test('RIR 0 below the range: hold same weight and reps', () => {
+  const d = mk({ sessions: [sess(1, [w('bench', R(20, 0, 7, 7, 6))])] });
+  const t = targetFor(d, 'bench');
+  assert.equal(t.weight, 20); assert.equal(t.reps, 6); assert.match(t.reason, /Hold/);
+});
+test('RIR at target in range: +1 rep as before; no RIR: unchanged rules', () => {
+  const d = mk({ sessions: [sess(1, [w('bench', R(20, 2, 10, 10, 10))])] });
+  assert.equal(targetFor(d, 'bench').reps, 11);
+  const d2 = mk({ sessions: [sess(1, [w('bench', R(20, null, 7, 7))])] });
+  assert.equal(targetFor(d2, 'bench').reps, 8);
+});
+test('RIR only counts on the last set', () => {
+  const d = mk({ sessions: [sess(1, [w('bench', [{ weight: 20, reps: 10, rir: 4 }, { weight: 20, reps: 10, rir: 1 }])])] });
+  assert.equal(targetFor(d, 'bench').weight, 20);
+});
+test('strength targets carry the target RIR (default 2)', () => {
+  const d = mk({ sessions: [sess(1, [w('bench', R(20, null, 10))])] });
+  assert.equal(targetFor(d, 'bench').rir, 2);
+  d.exercises[0].targetRir = 1;
+  assert.equal(targetFor(d, 'bench').rir, 1);
+});

@@ -423,3 +423,15 @@ button.thumb:active { opacity: .7; }
 .lg-band { display: inline-block; width: 14px; height: 12px; background: var(--accent-weak); border-radius: 2px; }
 .lg-marker { display: inline-block; width: 0; height: 14px; border-left: 1px dashed var(--ink-2); }
 .lg-hollow { display: inline-block; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--accent); }
+
+/* ---------- reps in reserve ---------- */
+.rir { display: flex; align-items: center; gap: 12px; padding: 6px 0 10px 38px; }
+.rir-label { font-size: 13px; font-weight: 500; color: var(--ink-3); flex: none; }
+.rir-opts { display: flex; gap: 4px; flex: 1; }
+.rir-opts button {
+  flex: 1; min-width: 36px; height: 36px; border-radius: var(--r-sm); border: 1px solid var(--line-strong);
+  font: 600 16px var(--f-num); color: var(--ink-2); text-align: center; background: var(--bg);
+}
+.rir-opts button.target { border-color: var(--ink-3); border-style: dashed; }
+.rir-opts button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); border-style: solid; }
+.editor .rir-opts button { height: 40px; }
